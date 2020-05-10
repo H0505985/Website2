@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Annie Huang" />
+    <meta name="description" content="Portfolio of Annie&#39;s Projects">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Project 2: Modeling, Testing, and Predicting</title>
+    <meta name="generator" content="Hugo 0.70.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/project2/">Project 2: Modeling, Testing, and Predicting</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          January 1, 0001
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<p>#Introduction</p>
+<p>Gun Violence in U.S. results in tens of thousands of deaths and injuries every year. According to BBC, about 40% of Americans say they own a gun or live in a household with one, and the rate of murder or manslaughter by firearm is the highest in the developed world. In the U.S. especially, gun ownership control and background checks have been heavily argued for in favor of minimizing gun deaths. Many politicians have highlighted that tightening gun control laws may decrease gun deaths. One should expect that with each administered gun permit, there is an extensive background check. Therefore, I expect that with increasing permits (more extensive background checks) there should be a decrease in gun deaths. However, I recognize that this may be idealistic; currently, gun permits are relatively easy to obtain, and there are other avenues of obtaining illegal firearms.</p>
+<p>From the CDC and FBI websites, I chose two datasets: Total Gun Deaths in the U.S. and Total Gun Permits (including long-guns and handguns) administered. Total Gun Deaths in the U.S. has two variables: Month-Code (categorical, 108 observations) and Deaths (numerical, 108 observations). Total Gun Permits in the U.S. has four variables: Month-Code (categorical, 108 obs), Handguns Permits (numerical, 108 obs), Long-gun Permits (numerical, 108 obs), and Total Gun Permits (including Long-Gun and Handgun Permits, 108 obs)*.</p>
+<p>*From merged dataset/after wrangling
+Source: <a href="https://wonder.cdc.gov/ucd-icd10.html" class="uri">https://wonder.cdc.gov/ucd-icd10.html</a> (CDC Database)
+Source: <a href="https://www.fbi.gov/about-us/cjis/nics" class="uri">https://www.fbi.gov/about-us/cjis/nics</a>; <a href="https://github.com/BuzzFeedNews/nics-firearm-background-checks" class="uri">https://github.com/BuzzFeedNews/nics-firearm-background-checks</a></p>
+<p>##MANOVA</p>
+<p>There are many MANOVA assumptions, and the following are likely to be met:
+1. Independent observations
+2. Multivariate normality of DVs (n=25+)
+3. No multicollinearity
+4. Homogeneity of within-group covariances matrices</p>
+<p>The following are unlikely to be met:
+1. Random Samples: dataset is not random
+2. Linear Relationships among DVs: from Project 1, there was low correlation among DVs.
+3. No extreme univariate or multivariate outlier: From Project 1, there were a few extreme outliers</p>
+<p><em>Ho: For both DVs (Long_gun permits, Handgun permits), means for each year are equal.</em></p>
+<p><em>Ha: For at least one DV, at least one year mean is different</em></p>
+<p>Post hoc analysis was performed conducting pairwise comparisons to determine which Year differed in handguns and long_gun. Some years (2010 &amp; 2013,2014,2015, 2016, 2017, 2018; 2011 &amp; 2013,2015,2016,2017,2018; 2012 &amp; 2016) were found to differ significantly from each other in terms of handgun after adjusting for multiple comparisons (bonferroni alpha=0.05/75=0.0006).</p>
+<pre class="r"><code>##Since results are significant, univariate ANOVAs and post-hoc t-test will be run
+man1&lt;-manova(cbind(handgun,long_gun)~year, data=df_merged)
+summary(man1)</code></pre>
+<pre><code>## Df Pillai approx F num Df den Df Pr(&gt;F)
+## year 1 0.5562 65.797 2 105 &lt; 2.2e-16 ***
+## Residuals 106
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<pre class="r"><code>#get univariate ANOVAs
+summary.aov(man1) </code></pre>
+<pre><code>## Response handgun :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## year 1 9.4762e+11 9.4762e+11 51.03 1.198e-10 ***
+## Residuals 106 1.9684e+12 1.8570e+10
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response long_gun :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## year 1 1.9438e+10 1.9438e+10 0.7516 0.3879
+## Residuals 106 2.7415e+12 2.5863e+10</code></pre>
+<pre class="r"><code>#Using the Bonferroni method for controlling Type I error rates for multiple comparisons. The univariate ANOVAs for handgun was significant
+
+#Only Handgun is significant: at least one year differs 
+
+df_merged%&gt;%group_by(year)%&gt;%summarize(mean(long_gun),mean(handgun))</code></pre>
+<pre><code>## # A tibble: 9 x 3
+##    year `mean(long_gun)` `mean(handgun)`
+##   &lt;dbl&gt;            &lt;dbl&gt;           &lt;dbl&gt;
+## 1  2010          403515.         306500.
+## 2  2011          453830.         358449.
+## 3  2012          572185.         473580.
+## 4  2013          594066.         532292.
+## 5  2014          461948.         516604.
+## 6  2015          456620.         611151.
+## 7  2016          499043.         673792.
+## 8  2017          436230.         602248.
+## 9  2018          409711.         548009.</code></pre>
+<pre class="r"><code>pairwise.t.test(df_merged$long_gun,
+df_merged$year, p.adj=&quot;none&quot;)</code></pre>
+<pre><code>##
+## Pairwise comparisons using t tests with pooled SD
+##
+## data: df_merged$long_gun and df_merged$year
+##
+## 2010 2011 2012 2013 2014 2015 2016 2017
+## 2011 0.4236 - - - - - - -
+## 2012 0.0083 0.0617 - - - - - -
+## 2013 0.0030 0.0273 0.7275 - - - - -
+## 2014 0.3530 0.8971 0.0814 0.0374 - - - -
+## 2015 0.3984 0.9646 0.0679 0.0305 0.9324 - - -
+## 2016 0.1303 0.4719 0.2455 0.1323 0.5549 0.4997 - -
+## 2017 0.6025 0.7792 0.0323 0.0133 0.6822 0.7454 0.3182 -
+## 2018 0.9214 0.4827 0.0109 0.0040 0.4061 0.4555 0.1568
+0.6728
+##
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(df_merged$handgun,
+df_merged$year, p.adj=&quot;none&quot;)</code></pre>
+<pre><code>##
+## Pairwise comparisons using t tests with pooled SD
+##
+## data: df_merged$handgun and df_merged$year
+##
+## 2010 2011 2012 2013 2014 2015 2016 2017
+## 2011 0.31294 - - - - - - -
+## 2012 0.00152 0.02681 - - - - - -
+## 2013 2.6e-05 0.00099 0.25444 - - - - -
+## 2014 8.4e-05 0.00262 0.40294 0.76002 - - - -
+## 2015 4.1e-08 3.3e-06 0.00848 0.12684 0.06789 - - -
+## 2016 1.4e-10 1.6e-08 0.00017 0.00684 0.00277 0.22424 - -
+## 2017 8.9e-08 6.6e-06 0.01362 0.17509 0.09766 0.86237
+0.16560 -
+## 2018 7.9e-06 0.00035 0.14935 0.75959 0.54118 0.22058
+0.01580 0.29220
+##
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>#Did 1 MANOVA, 2 ANOVAS, and 72 t tests (75 test), so should use alpha= 0.05/75=0.00066</code></pre>
+<p>##Randomization Test</p>
+<p>I chose to do months December and February based on a graph I saw online that saw February with highest number of gun deaths and December with lowest number of gun deaths. I wanted to see if this was true using my dataset.</p>
+<p><em>Ho:mean gun deaths is the same for December (12) and February (2)</em></p>
+<p><em>Ha: mean gun deaths is different for December (12) and February (2)</em></p>
+<p>After testing what proportion of our mean differences (stimulated under the null hypothesis) are more extreme than the acutal value of +/-414.111:</p>
+<p><em>p-value: 0.0056</em> p-value corresponds to the probability of observing a mean difference as extreme as the one observed in our original data.</p>
+<p><em>Since p-value is less than alpha = 0.05, we reject the null hypothesis.</em> Mean gun deaths is different for December and February.</p>
+<pre class="r"><code>Feb&lt;-df_merged%&gt;%filter(month==&quot;02&quot;)%&gt;%select(Deaths)
+Feb&lt;-c(2183,2158,2357,2375,2360,2489,2756,2921,2957)
+
+Dec&lt;-df_merged%&gt;%filter(month==&quot;12&quot;)%&gt;%select(Deaths)
+Dec&lt;-c(2582,2638,2791,2765,2856,3065,3127,3270,3189)
+
+
+df_random&lt;-data.frame(Month=c(rep(&quot;Dec&quot;,9),rep(&quot;Feb&quot;,9)), Deaths=c(Feb, Dec))
+
+head(df_random)</code></pre>
+<pre><code>##   Month Deaths
+## 1   Dec   2183
+## 2   Dec   2158
+## 3   Dec   2357
+## 4   Dec   2375
+## 5   Dec   2360
+## 6   Dec   2489</code></pre>
+<pre class="r"><code>#ggplot
+ggplot(df_random,aes(Deaths,fill=Month))+geom_histogram(bins=6.5)+facet_wrap(~Month,ncol=2)+theme(legend.position=&quot;none&quot;)</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-9-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#randomization test
+df_random%&gt;%group_by(Month)%&gt;%
+  summarize(means=mean(Deaths))%&gt;%summarize(`mean_diff:`=diff(means))</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   `mean_diff:`
+##          &lt;dbl&gt;
+## 1         414.</code></pre>
+<pre class="r"><code>#Doing this 5,000 times
+rand_dist&lt;-vector()
+for(i in 1:5000){
+new&lt;-data.frame(Deaths=sample(df_random$Deaths),Month=df_random$Month)
+rand_dist[i]&lt;-mean(new[new$Month==&quot;Dec&quot;,]$Deaths)-
+mean(new[new$Month==&quot;Feb&quot;,]$Deaths)}
+
+#histogram
+{hist(rand_dist,main=&quot;&quot;,ylab=&quot;&quot;); abline(v = 414.1111,col=&quot;red&quot;);abline(v = -414.1111,col=&quot;red&quot;)}</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-9-2.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#two tailed p-value
+mean(rand_dist&gt;414.1111|rand_dist &lt; -414.111)</code></pre>
+<pre><code>## [1] 0.0076</code></pre>
+<pre class="r"><code>t.test(data=df_random, Deaths~Month)</code></pre>
+<pre><code>##
+## Welch Two Sample t-test
+##
+## data: Deaths by Month
+## t = -3.179, df = 15.465, p-value = 0.006034
+## alternative hypothesis: true difference in means is not
+equal to 0
+## 95 percent confidence interval:
+## -691.0418 -137.1804
+## sample estimates:
+## mean in group Dec mean in group Feb
+## 2506.222 2920.333</code></pre>
+<p>##Linear Regression Model with Interactions</p>
+<p>###Interpreting the coefficient estimates</p>
+<p>Controlling for # of long gun permits, there is a significant effect of # of hand gun permits administered on gun deaths, and vice versa. For every one unit increase in hand gun permits, gun deaths increase 1.075e-03 persons on average. For every one unit increase in long gun permits, gun deaths decrease 1.018e-03 persons on average. However, the interaction between long gun and hand gun permits are not significant on gun deaths.</p>
+<p>After recomputing regression using robust standard errors, the results on significance still stay the same. This is expected since the corrected SEs are robust to violations of homoskedasticity. Our assumptions of homoskedasticity was normal, so our significance results did not change.</p>
+<p>27.3% of the variation in deaths is explained by the regression line.</p>
+<pre class="r"><code>#Mean centering numeric variables 
+##long_guns permits 
+
+df_merged$longgun_c&lt;-data.frame(long_guns_c=df_merged$long_gun-mean(df_merged$long_gun))
+                                
+##handgun permits
+
+df_merged$handgun_c&lt;-data.frame(handguns_c=df_merged$handgun-mean(df_merged$handgun))
+
+unlist_longgun=unlist(df_merged$longgun_c)
+unlist_handgun=unlist(df_merged$handgun_c)
+
+#Check assumptions of linearity, normality, and homoskedasticity 
+#Passes linearity &amp; homoskedsaticity assumption
+resids&lt;-lm(df_merged$Deaths~unlist_handgun*unlist_longgun)$residuals
+ggplot()+geom_histogram(aes(resids),bins=10)</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-10-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitted&lt;-lm(df_merged$Deaths~unlist_handgun*unlist_longgun)$fitted.values 
+ggplot()+geom_point(aes(resids,fitted))</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-10-2.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#normality using shapiro-wilk test 
+shapiro.test(resids)</code></pre>
+<pre><code>## 
+##  Shapiro-Wilk normality test
+## 
+## data:  resids
+## W = 0.95598, p-value = 0.00127</code></pre>
+<pre class="r"><code>#fails the normality assumption 
+
+#Multiple Regression
+fitt&lt;-lm(Deaths ~ unlist_longgun*unlist_handgun,data=df_merged)
+summary(fitt)</code></pre>
+<pre><code>##
+## Call:
+## lm(formula = Deaths ~ unlist_longgun * unlist_handgun,
+data = df_merged)
+##
+## Residuals:
+## Min 1Q Median 3Q Max
+## -757.20 -128.93 6.44 156.69 536.53
+##
+## Coefficients:
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 2.959e+03 2.802e+01 105.593 &lt; 2e-16 ***
+## unlist_longgun -1.018e-03 2.091e-04 -4.868 4.04e-06 ***
+## unlist_handgun 1.075e-03 1.945e-04 5.530 2.40e-07 ***
+## unlist_longgun:unlist_handgun -1.817e-10 7.565e-10
+-0.240 0.811
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Residual standard error: 267.7 on 104 degrees of freedom
+## Multiple R-squared: 0.2731, Adjusted R-squared: 0.2521
+## F-statistic: 13.02 on 3 and 104 DF, p-value: 2.747e-07</code></pre>
+<pre class="r"><code>#Recompute regression results with robust standard errors
+library(lmtest)
+  #before
+  coeftest(fitt)</code></pre>
+<pre><code>##
+## t test of coefficients:
+##
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 2.9586e+03 2.8019e+01 105.5930 &lt; 2.2e-16 ***
+## unlist_longgun -1.0177e-03 2.0906e-04 -4.8679 4.038e-06
+***
+## unlist_handgun 1.0754e-03 1.9447e-04 5.5300 2.398e-07
+***
+## unlist_longgun:unlist_handgun -1.8170e-10 7.5650e-10
+-0.2402 0.8107
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<pre class="r"><code>  #after
+  coeftest(fitt, vcov=vcovHC(fitt))</code></pre>
+<pre><code>##
+## t test of coefficients:
+##
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 2.9586e+03 2.8794e+01 102.7482 &lt; 2.2e-16 ***
+## unlist_longgun -1.0177e-03 1.6515e-04 -6.1622 1.378e-08
+***
+## unlist_handgun 1.0754e-03 2.0910e-04 5.1432 1.277e-06
+***
+## unlist_longgun:unlist_handgun -1.8170e-10 8.2883e-10
+-0.2192 0.8269
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<pre class="r"><code>#Compute R^2
+summary(fitt)$r.sq</code></pre>
+<pre><code>## [1] 0.273103</code></pre>
+<pre class="r"><code>#Plot the regression using ggplot()
+new1&lt;-df_merged
+new1$handgun_cc&lt;-mean(unlist(df_merged$handgun_c))
+new1$mean&lt;-predict(fitt,new1)
+
+new1$handgun_cc&lt;-mean(unlist(df_merged$handgun_c))+sd(unlist(df_merged$handgun_c))
+new1$plus.sd&lt;-predict(fitt,new1)
+
+new1$handgun_cc&lt;-mean(unlist(df_merged$handgun_c))-sd(unlist(df_merged$handgun_c))
+new1$minus.sd&lt;-predict(fitt,new1)
+
+new1$long_gun_c&lt;-unlist(new1$longgun_c)
+
+newint&lt;-new1%&gt;%select(Deaths,long_gun_c,mean,plus.sd,minus.sd)%&gt;%gather(handgun_c,value,-Deaths,-long_gun_c)
+
+mycols&lt;-c(&quot;#619CFF&quot;,&quot;#F8766D&quot;,&quot;#00BA38&quot;)
+names(mycols)&lt;-c(&quot;-1 sd&quot;,&quot;mean&quot;,&quot;+1 sd&quot;)
+mycols=as.factor(mycols)
+#I referred to the code near the end of WS15 
+ggplot(df_merged,aes(unlist_longgun,Deaths),group=mycols)+geom_point()+geom_line(data=new1,aes(y=mean,color=&quot;mean&quot;))+geom_line(data=new1,aes(y=plus.sd,color=&quot;+1 sd&quot;))+geom_line(data=new1,aes(y=minus.sd,color=&quot;-1 sd&quot;))+scale_color_manual(values=mycols)+labs(color=&quot;Handguns (cont)&quot;)+theme(legend.position=c(.9,.2))</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-10-3.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#I also downloaded interactions package to graph two numeric interaction predictors against Gun Deaths 
+interact_plot(fitt, pred = unlist_longgun, modx = unlist_handgun)</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-10-4.png" width="768" style="display: block; margin: auto;" /></p>
+<p>##Linear Regression Model with bootstrapped SEs</p>
+<p>Bootstrapped SEs were all very close compared to Regular SEs (intercept: 2.8019+01, significant, unlist_longgun:2.0906e-04, significant, unlist_handgun : 1.9447e-04, significant, unlist_longgun:unlist_handgun: 7.5650e-10, not significant) and Robust SEs (intercept: 2.8794e+01 , significant, unlist_longgun:1.6515e-04, significant, unlist_handgun : 2.0910e-04, significant, unlist_longgun:unlist_handgun: 8.2883e-10, not significant). Regular, Robust, and Bootstrapped SEs were very similar in both SEs and p-values. However, bootstrapped SEs were closer in value to Robust SEs.</p>
+<pre class="r"><code>#Recompute regression results with bootstrapped standard errors 
+##define a function that takes data, df_merged and returns bootstrap SE
+boot_dat&lt;- sample_frac(df_merged, replace=T)
+
+# repeat 5000 times
+samp_distn&lt;-replicate(5000, {
+boot_dat &lt;- sample_frac(df_merged, replace=T) #bootstrap data
+fitt &lt;- lm(Deaths ~ unlist_longgun*unlist_handgun,data=boot_dat) #fit model
+coef(fitt) #save coefs
+})
+
+
+## Estimated SEs (resampling rows)
+samp_distn %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
+<pre><code>## (Intercept) unlist_longgun unlist_handgun
+unlist_longgun:unlist_handgun
+## 1 32.4155 0.000239049 0.000219391 8.670691e-10</code></pre>
+<p>##Logistic Regression</p>
+<p><em>Preface: Prior to starting Project 2, I wanted to use the same dataset as Project 1 because I thought it would be more cohesive. However, more than halfway through Project 2, I realized that some of my variables did not necessarily fit the context of the models. I acknowledge that some of my predictor variables may have a far-stretched relationship with my response variables (and may not make sense). However, I will interpret the results in the same context.</em></p>
+<p>For my logisitic regression, I choose to predict whether the months were during the school year (1 for during school year, 0 for not) from the number of long gun and hand gun permits administered.</p>
+<p><em>Interpreting the coefficients:</em></p>
+<ul>
+<li><p>Controlling for the number of longgun permits administered, going up 1 hanggun multiplies odds by a factor of 0.99.</p></li>
+<li><p>Controlling for number of handgun permits administered, going up 1 longgun multiplies odds by a factor of 0.99.</p></li>
+<li><p>Controlling for both hanggun and longgun permits administered, odds increases by 4.021e+05.</p></li>
+<li><p>Only the number of longgun permits administered is significant in predicting whether the months are during the school year or not.</p></li>
+</ul>
+<p>The accuracy or the proportion of correctly identified months is (6+97/108)= .95.</p>
+<p>The probability of no-school months that are correctly classified (TNR) is 6/9 = 0.666.</p>
+<p>The probability of correctly identifying the month occuring during the school season when it really is a school month (PPV) is 97/99=.979.</p>
+<p><em>Interpreting AUC &amp; ROC:</em>
+ROC is a probability curve and AUC represents degree or measure of separability. It tells how much the model is capable of distinguishing between classes. The higher the AUC, better the model is at correctly predicting/distinguishing 0s as 0s and 1s as 1s. The ROC curve shows the trade-off between sensitivity and specificity. Classifiers that give curves to the top-left indicate a better performance; the baseline is the 45 degree diagonal of the ROCplot. The closer to the 45 degree diagonal, the less accurate the test. In this case, the ROC curve gives a near perfect top-left curve and area under the curve is 0.9708 (there is 97.08% probability that a randomly selected school month (y=1) has a higher predicted probability than a randomly selected non-school month (y=0)).</p>
+<p>The average diagnostics across repeated random sub-sampling CV:</p>
+<ul>
+<li><p>PPV: 0.955256</p></li>
+<li><p>AUC: 0.9304327</p></li>
+<li><p>ACC: 0.9274155<br />
+</p></li>
+<li><p>SENS: 0.9669902</p>
+<p>There was a worse performance out of sample, indicating that the in-sample model was overfitting.</p></li>
+</ul>
+<p><em>was unable to do 500 iterations because there was an out of bounds error each time</em></p>
+<pre class="r"><code>#Creating a logistic regression to see if months (school vs. no-school months) are based on the number of longgun or handgun permits administered
+
+#create a binary categorical variable with school months as (1), and no school months as (0)
+data&lt;-df_merged%&gt;%mutate(schoolmonth=ifelse(month==c(&quot;06&quot;,&quot;07&quot;,&quot;12&quot;),0,1))%&gt;%select(-monthsort)
+
+fit4&lt;-glm(schoolmonth~handgun+long_gun,data=data,family=binomial(link=&quot;logit&quot;))
+
+coeftest(fit4)</code></pre>
+<pre><code>##
+## z test of coefficients:
+##
+## Estimate Std. Error z value Pr(&gt;|z|)
+## (Intercept) 1.2904e+01 3.3957e+00 3.8003 0.0001445 ***
+## handgun -1.6893e-06 3.2979e-06 -0.5122 0.6084795
+## long_gun -1.5408e-05 4.8695e-06 -3.1642 0.0015551 **
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<pre class="r"><code>exp(coef(fit4))</code></pre>
+<pre><code>##  (Intercept)      handgun     long_gun 
+## 4.021161e+05 9.999983e-01 9.999846e-01</code></pre>
+<pre class="r"><code>prob&lt;-predict(fit4,type=&quot;response&quot;) #get predicted probabilities
+data$prob&lt;-predict(fit4,type=&quot;response&quot;)
+pred&lt;-ifelse(prob&gt;.5,1,0)
+
+#confusion matrix
+table(prediction=pred, truth=data$schoolmonth)%&gt;%addmargins</code></pre>
+<pre><code>##           truth
+## prediction   0   1 Sum
+##        0     6   2   8
+##        1     3  97 100
+##        Sum   9  99 108</code></pre>
+<pre class="r"><code>#Accuracy 
+(6+97)/108 </code></pre>
+<pre><code>## [1] 0.9537037</code></pre>
+<pre class="r"><code>#TPR 
+97/99</code></pre>
+<pre><code>## [1] 0.979798</code></pre>
+<pre class="r"><code>#TNR 
+6/9</code></pre>
+<pre><code>## [1] 0.6666667</code></pre>
+<pre class="r"><code>#PPV
+97/99</code></pre>
+<pre><code>## [1] 0.979798</code></pre>
+<pre class="r"><code>#ggplot
+data$logit&lt;-predict(fit4,type=&quot;link&quot;)
+
+data$schoolmonth_factor &lt;- as.factor(data$schoolmonth)
+
+data%&gt;%ggplot(aes(logit,color=schoolmonth_factor,fill=schoolmonth_factor))+geom_density(alpha=.4)+theme(legend.position=c(.85,.85))+geom_vline(xintercept=0)+xlab(&quot;logit(log-odds)&quot;)+geom_rug(aes(logit,color=schoolmonth_factor))</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-12-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#ROC
+pred1 &lt;- prediction(data$prob,data$schoolmonth)
+perf &lt;- performance(pred1,&quot;tpr&quot;,&quot;fpr&quot;)
+plot(perf)+geom_path(size=1.5)</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-12-2.png" width="768" style="display: block; margin: auto;" /></p>
+<pre><code>## NULL</code></pre>
+<pre class="r"><code>#AUC
+auc(data$schoolmonth, prob)</code></pre>
+<pre><code>## Area under the curve: 0.9708</code></pre>
+<pre class="r"><code>#Class_diag 
+class_diag &lt;- function(probs,truth){
+  #CONFUSION MATRIX: CALCULATE ACCURACY, TPR, TNR, PPV
+tab&lt;-table(factor(probs&gt;.5,levels=c(&quot;FALSE&quot;,&quot;TRUE&quot;)),truth)
+acc=sum(diag(tab))/sum(tab)
+sens=tab[2,2]/colSums(tab)[2]
+spec=tab[1,1]/colSums(tab)[1]
+ppv=tab[2,2]/rowSums(tab)[2]
+if(is.numeric(truth)==FALSE &amp; is.logical(truth)==FALSE) truth&lt;-as.numeric(truth)-1
+  #CALCULATE EXACT AUC
+ord&lt;-order(probs, decreasing=TRUE)
+probs &lt;- probs[ord]; truth &lt;- truth[ord]
+TPR=cumsum(truth)/max(1,sum(truth))
+FPR=cumsum(!truth)/max(1,sum(!truth))
+dup&lt;-c(probs[-1]&gt;=probs[-length(probs)], FALSE)
+TPR&lt;-c(0,TPR[!dup],1); FPR&lt;-c(0,FPR[!dup],1)
+n &lt;- length(TPR)
+auc&lt;- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+data.frame(acc,sens,spec,ppv,auc)
+} 
+
+#repeated random sub-sampling CV 
+set.seed(1234)
+fraction&lt;-0.5 #choose proportion of rows to train
+train_n&lt;-floor(fraction*nrow(data)) #number of rows to train
+iter&lt;-400 #number of iterations
+
+diags&lt;-NULL
+for(i in 1:iter){
+## Create training and test sets
+train_index&lt;-sample(1:nrow(data),size=train_n)
+train&lt;-data[train_index,]
+test&lt;-data[-train_index,]
+truth&lt;-test$schoolmonth
+## Train model on training set (random half of dataset)
+fit5&lt;-glm(schoolmonth~handgun+long_gun,data=train,family=&quot;binomial&quot;)
+## Test model on remaning half of dataset; get classification diagnostics
+probs&lt;-predict(fit5,newdata = test,type=&quot;response&quot;)
+diags&lt;-rbind(diags,class_diag(probs,truth))
+}
+
+summarize_all(diags,mean) #average diagnostics </code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.9269907 0.9677615 0.5149018 0.9542009 0.9325522</code></pre>
+<p>##LASSO Regression</p>
+<p>For LASSO Regression, I chose the same binary variable used in part 5. The predictors were deaths, number of handgun permits administered, number of long gun permits administered and year. The optimal value for lambda is 0.0829. The variable, number of long gun permits administered, was retained. The 4-fold CV (I was not able to run a 10-fold CV. I kept receiving out of bounds error) using this model (with long gun variable only) resulted in an auc of 0.99 (which indicates near perfect accuracy). There was not much change in auc compared to the part 5 auc of 0.97, indicating that the logistic regression model was probably not overfitting.</p>
+<pre class="r"><code>y&lt;-as.matrix(data$schoolmonth) #grab response variable
+x&lt;-model.matrix(schoolmonth~Deaths+handgun+long_gun+totals+year,data=data)[,-1] #grab predictors
+#standardize predictor variables 
+x&lt;-scale(x)
+
+#Lasso Regression
+cv&lt;-cv.glmnet(x,y, family=&quot;binomial&quot;) #find optimal value for lambda 
+lasso1&lt;-glmnet(x,y, family=&quot;binomial&quot;, lambda=cv$lambda.1se)
+coef(lasso1) #looks like administered long_gun permits is the most predictive variables on whether it is a school month or not. </code></pre>
+<pre><code>## 6 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                     s0
+## (Intercept)  2.7939627
+## Deaths       .        
+## handgun      .        
+## long_gun    -0.9528982
+## totals       .        
+## year         .</code></pre>
+<pre class="r"><code>#Cross-Validating the Lasso Model 
+set.seed(1234)
+k=4
+newdata1 &lt;- data[sample(nrow(data)),]
+
+folds &lt;- cut(seq(1:nrow(data)),breaks=k,labels=F)  #create fold labels
+
+diagss&lt;-NULL
+for(i in 1:k){
+train &lt;- newdata1[folds!=i,] #create training set 
+test &lt;- newdata1[folds==i,] #create test set 
+truth &lt;- test$schoolmonth #save truth labels from fold i
+
+fit6 &lt;- glm(schoolmonth~long_gun,data=train, family=&quot;binomial&quot;)
+probs2 &lt;- predict(fit6, newdata=test, type=&quot;response&quot;)
+diagss&lt;-rbind(diagss,class_diag(probs2,truth))
+}
+
+diagss%&gt;%summarize_all(mean)</code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.9351852 0.9695833 0.6666667 0.9611538 0.9826389</code></pre>
+<pre><code>## R version 4.0.0 (2020-04-24)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 18362)
+##
+## Matrix products: default
+##
+## locale:
+## [1] LC_COLLATE=English_United States.1252
+LC_CTYPE=English_United States.1252
+## [3] LC_MONETARY=English_United States.1252 LC_NUMERIC=C
+## [5] LC_TIME=English_United States.1252
+##
+## attached base packages:
+## [1] stats graphics grDevices utils datasets methods base
+##
+## other attached packages:
+## [1] lmtest_0.9-37 zoo_1.8-8 pROC_1.16.2 ROCR_1.0-11
+gplots_3.0.3
+## [6] interactions_1.1.3 sandwich_2.5-1 glmnet_3.0-2
+Matrix_1.2-18 plotROC_2.2.1
+## [11] mvtnorm_1.1-0 forcats_0.5.0 dplyr_0.8.5 purrr_0.3.4
+readr_1.3.1
+## [16] tidyr_1.0.3 tibble_3.0.1 ggplot2_3.3.0
+tidyverse_1.3.0 stringr_1.4.0
+## [21] stringi_1.4.6 knitr_1.28
+##
+## loaded via a namespace (and not attached):
+## [1] httr_1.4.1 jsonlite_1.6.1 foreach_1.5.0 modelr_0.1.7
+gtools_3.8.2
+## [6] assertthat_0.2.1 pander_0.6.3 cellranger_1.1.0
+yaml_2.2.1 pillar_1.4.4
+## [11] backports_1.1.6 lattice_0.20-41 glue_1.4.0
+jtools_2.0.5 digest_0.6.25
+## [16] rvest_0.3.5 colorspace_1.4-1 plyr_1.8.6
+htmltools_0.4.0 pkgconfig_2.0.3
+## [21] broom_0.5.6 haven_2.2.0 bookdown_0.18 scales_1.1.0
+gdata_2.18.0
+## [26] farver_2.0.3 generics_0.0.2 ellipsis_0.3.0
+withr_2.2.0 cli_2.0.2
+## [31] magrittr_1.5 crayon_1.3.4 readxl_1.3.1
+evaluate_0.14 fs_1.4.1
+## [36] fansi_0.4.1 nlme_3.1-147 xml2_1.3.2 blogdown_0.18
+tools_4.0.0
+## [41] hms_0.5.3 lifecycle_0.2.0 munsell_0.5.0
+reprex_0.3.0 compiler_4.0.0
+## [46] caTools_1.18.0 rlang_0.4.6 grid_4.0.0
+iterators_1.0.12 rstudioapi_0.11
+## [51] labeling_0.3 bitops_1.0-6 rmarkdown_2.1
+gtable_0.3.0 codetools_0.2-16
+## [56] DBI_1.1.0 R6_2.4.1 lubridate_1.7.8 utf8_1.1.4
+KernSmooth_2.23-16
+## [61] shape_1.4.4 Rcpp_1.0.4.6 vctrs_0.2.4 dbplyr_1.4.3
+tidyselect_1.0.0
+## [66] xfun_0.13</code></pre>
+<pre><code>## [1] &quot;2020-05-10 17:20:19 CDT&quot;</code></pre>
+<pre><code>## sysname release version nodename machine
+## &quot;Windows&quot; &quot;10 x64&quot; &quot;build 18362&quot; &quot;DESKTOP-LQIUJCT&quot;
+&quot;x86-64&quot;
+## login user effective_user
+## &quot;Annie&quot; &quot;Annie&quot; &quot;Annie&quot;</code></pre>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

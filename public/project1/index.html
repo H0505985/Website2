@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Annie Huang" />
+    <meta name="description" content="Portfolio of Annie&#39;s Projects">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Project 1: Explanatory Data Analysis</title>
+    <meta name="generator" content="Hugo 0.70.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/project1/">Project 1: Explanatory Data Analysis</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          January 1, 0001
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+<script src="/rmarkdown-libs/kePrint/kePrint.js"></script>
+
+
+<p>##Annie Huang (Ah48777)</p>
+<p>##Introduction</p>
+<p>Gun Violence in U.S. results in tens of thousands of deaths and injuries every year. According to BBC, about 40% of Americans say they own a gun or live in a household with one, and the rate of murder or manslaughter by firearm is the highest in the developed world. In the U.S. especially, gun ownership control and background checks have been heavily argued for in favor of minimizing gun deaths. Many politicians have highlighted that tightening gun control laws may decrease gun deaths. One should expect that with each administered gun permit, there is an extensive background check. Therefore, I expect that with increasing permits (more extensive background checks) there should be a decrease in gun deaths. However, I recognize that this may be idealistic; currently, gun permits are relatively easy to obtain, and there are other avenues of obtaining illegal firearms. From the CDC and FBI websites, I chose two datasets: Total Gun Deaths in the U.S. and Total Gun Permits (including long-guns and handguns) administered. Total Gun Deaths in the U.S. have two variables: Month-Code (categorical) and Deaths (numerical). Total Gun Permits in the U.S. have four variables: Month-Code (categorical), Handguns Permits (numerical), Long-gun Permits (numerical), and Total Gun Permits (including Long-Gun and Handgun Permits).</p>
+<p>##Import: Import Data from Source CSV files</p>
+<pre class="r"><code># Import data frame from CSV: Data on gun related deaths 
+# in the United States from 2010 to 2018 by month
+df_gundeaths &lt;- read.csv(&quot;usa_gun_deaths.csv&quot;)</code></pre>
+<p>Source: <a href="https://wonder.cdc.gov/ucd-icd10.html" class="uri">https://wonder.cdc.gov/ucd-icd10.html</a> (CDC Database)</p>
+<pre class="r"><code># Import data frame from CSV: Data on background check permits
+# for firearms by NICS by month
+df_BCpermits &lt;- read.csv(&quot;nics-firearm-background-checks.csv&quot;)</code></pre>
+<p>Source: <a href="https://www.fbi.gov/about-us/cjis/nics" class="uri">https://www.fbi.gov/about-us/cjis/nics</a>; <a href="https://github.com/BuzzFeedNews/nics-firearm-background-checks" class="uri">https://github.com/BuzzFeedNews/nics-firearm-background-checks</a></p>
+<p>##General Cleaning: Clean the Columns</p>
+<pre class="r"><code># Select the variables of importance and drop irrelevant columns from df_gundeaths
+vars_gundeaths &lt;- c(&quot;Month_Code&quot;, &quot;Deaths&quot;)
+df_gundeaths &lt;- df_gundeaths[vars_gundeaths]
+
+# Select the variables of importance and drop irrelevant columns from df_BCpermits
+vars_BCpermits &lt;- c(&quot;month&quot;, &quot;handgun&quot;, &quot;long_gun&quot;, &quot;totals&quot;)
+df_BCpermits &lt;- df_BCpermits[vars_BCpermits]
+
+# Consolidate and sum multiple entries for a given month
+df_gundeaths &lt;- df_gundeaths %&gt;% group_by(Month_Code) %&gt;% summarize_all(sum) 
+df_gundeaths</code></pre>
+<pre><code>## # A tibble: 108 x 2
+##    Month_Code Deaths
+##    &lt;chr&gt;       &lt;int&gt;
+##  1 2010-01      2568
+##  2 2010-02      2183
+##  3 2010-03      2651
+##  4 2010-04      2671
+##  5 2010-05      2761
+##  6 2010-06      2719
+##  7 2010-07      2933
+##  8 2010-08      2774
+##  9 2010-09      2588
+## 10 2010-10      2725
+## # ... with 98 more rows</code></pre>
+<pre class="r"><code># Use of dplyr group_by &amp; summarize
+df_BCpermits &lt;- df_BCpermits %&gt;% group_by(month) %&gt;% summarize_all(sum)</code></pre>
+<p>##Joining/Merging: Merge the Datasets</p>
+<pre class="r"><code># Rename the merge variable to be the same in both dataframes
+names(df_BCpermits)[names(df_BCpermits)==&#39;month&#39;] &lt;- &#39;Month_Code&#39;
+
+# Left join the two cleaned dataframes to create merged data set
+df_merged &lt;- left_join(df_gundeaths, df_BCpermits, by=&#39;Month_Code&#39;) 
+
+# Error is due to column var type, surpressed from here forward as it is harmless.
+
+# Report number of dropped rows in the merge
+suppressWarnings(checkmerge_BCpermits &lt;- nrow(anti_join(df_BCpermits, df_merged, by=&#39;Month_Code&#39;)))
+print(paste0(&quot;There were &quot;, checkmerge_BCpermits, &quot; rows in the BCpermits data that were excluded in the merged dataset&quot;))</code></pre>
+<pre><code>## [1] &quot;There were 147 rows in the BCpermits data that were excluded in the merged dataset&quot;</code></pre>
+<pre class="r"><code>suppressWarnings(checkmerge_gundeaths &lt;- nrow(anti_join(df_gundeaths, df_merged, by=&#39;Month_Code&#39;)))
+print(paste0(&quot;There were &quot;, checkmerge_gundeaths, &quot; rows in the gundeaths data that were excluded in the merged dataset&quot;))</code></pre>
+<pre><code>## [1] &quot;There were 0 rows in the gundeaths data that were excluded in the merged dataset&quot;</code></pre>
+<pre class="r"><code>df_merged</code></pre>
+<pre><code>## # A tibble: 108 x 5
+##    Month_Code Deaths handgun long_gun  totals
+##    &lt;chr&gt;       &lt;int&gt;   &lt;int&gt;    &lt;int&gt;   &lt;int&gt;
+##  1 2010-01      2568  289444   349597 1112312
+##  2 2010-02      2183  360273   387244 1237617
+##  3 2010-03      2651  367921   421284 1291618
+##  4 2010-04      2671  314326   349370 1226760
+##  5 2010-05      2761  275408   290452 1009818
+##  6 2010-06      2719  259339   279249  998262
+##  7 2010-07      2933  268987   288281 1062886
+##  8 2010-08      2774  280874   367074 1082360
+##  9 2010-09      2588  275133   415323 1139880
+## 10 2010-10      2725  291203   475736 1359894
+## # ... with 98 more rows</code></pre>
+<p>##Wrangling</p>
+<p><em>Note: some wrangling was completed in the previous sections (group_by &amp; summarize) and is marked by a comment</em></p>
+<p>Mutate: Extract the month and year from the month code (yyyy-mm to yyyy and mm as separate columns) and create a variable to sort with</p>
+<pre class="r"><code>df_merged &lt;- df_merged %&gt;% mutate(year = as.numeric(stri_sub(Month_Code, 1,4))) 
+df_merged &lt;- df_merged %&gt;% mutate(month = (stri_sub(Month_Code, 6,7))) 
+df_merged &lt;- df_merged %&gt;% mutate(monthsort = str_replace(Month_Code, &#39;-&#39;,&#39;&#39;)) </code></pre>
+<p>Arrange: Sort the data chronologically</p>
+<pre class="r"><code>df_merged &lt;- df_merged %&gt;% arrange(monthsort)
+df_merged</code></pre>
+<pre><code>## # A tibble: 108 x 8
+##    Month_Code Deaths handgun long_gun  totals  year month monthsort
+##    &lt;chr&gt;       &lt;int&gt;   &lt;int&gt;    &lt;int&gt;   &lt;int&gt; &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;    
+##  1 2010-01      2568  289444   349597 1112312  2010 01    201001   
+##  2 2010-02      2183  360273   387244 1237617  2010 02    201002   
+##  3 2010-03      2651  367921   421284 1291618  2010 03    201003   
+##  4 2010-04      2671  314326   349370 1226760  2010 04    201004   
+##  5 2010-05      2761  275408   290452 1009818  2010 05    201005   
+##  6 2010-06      2719  259339   279249  998262  2010 06    201006   
+##  7 2010-07      2933  268987   288281 1062886  2010 07    201007   
+##  8 2010-08      2774  280874   367074 1082360  2010 08    201008   
+##  9 2010-09      2588  275133   415323 1139880  2010 09    201009   
+## 10 2010-10      2725  291203   475736 1359894  2010 10    201010   
+## # ... with 98 more rows</code></pre>
+<p>Select: Drop unnecessary columns</p>
+<pre class="r"><code>df_merged &lt;- df_merged %&gt;% select(-Month_Code)
+df_merged</code></pre>
+<pre><code>## # A tibble: 108 x 7
+##    Deaths handgun long_gun  totals  year month monthsort
+##     &lt;int&gt;   &lt;int&gt;    &lt;int&gt;   &lt;int&gt; &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;    
+##  1   2568  289444   349597 1112312  2010 01    201001   
+##  2   2183  360273   387244 1237617  2010 02    201002   
+##  3   2651  367921   421284 1291618  2010 03    201003   
+##  4   2671  314326   349370 1226760  2010 04    201004   
+##  5   2761  275408   290452 1009818  2010 05    201005   
+##  6   2719  259339   279249  998262  2010 06    201006   
+##  7   2933  268987   288281 1062886  2010 07    201007   
+##  8   2774  280874   367074 1082360  2010 08    201008   
+##  9   2588  275133   415323 1139880  2010 09    201009   
+## 10   2725  291203   475736 1359894  2010 10    201010   
+## # ... with 98 more rows</code></pre>
+<p>Filter: Create new data set based on only most recent (2018) data (years are categorical for this data)</p>
+<pre class="r"><code>df_2018 &lt;- df_merged %&gt;% filter(year == 2018)</code></pre>
+<p>##Tidying and Untidying</p>
+<p>The data set was already tidy, but I untidy’d and then tidy’d the data to demonstrate understanding of the functions.</p>
+<pre class="r"><code>#Untidy the dataset
+df_merged_untidy = pivot_wider(df_merged,names_from = year, values_from = Deaths)
+
+#Tidy the dataset 
+df_merged_tidy = pivot_longer(df_merged_untidy, c(&#39;2010&#39;, &#39;2011&#39;,&#39;2012&#39;, &#39;2013&#39;,&#39;2014&#39;, &#39;2015&#39;,&#39;2016&#39;, &#39;2017&#39;,&#39;2018&#39;), names_to = &quot;year&quot;, values_to = &quot;Deaths&quot;)</code></pre>
+<div id="summary-statistics" class="section level2">
+<h2>Summary Statistics</h2>
+<pre class="r"><code># Deaths 
+df_sum_deaths &lt;- df_merged %&gt;% summarize(Mean=mean(Deaths), SD=sd(Deaths), Min=min(Deaths), 
+Max=max(Deaths), n_Distinct = n_distinct(Deaths), Median = median(Deaths),  Var = var(Deaths), 
+Quantile_25 = quantile(Deaths, c(.25)), Quantile_75 = quantile(Deaths, c(.75)), Top1_percent = quantile(Deaths, c(.99)))
+
+# Handgun Permits
+df_sum_handgun &lt;- df_merged %&gt;% summarize(Mean=mean(handgun), SD=sd(handgun), Min=min(handgun), Max=max(handgun), n_Distinct = n_distinct(handgun), Median = median(handgun), Var = var(handgun), Quantile_25 = quantile(handgun, c(.25)), Quantile_75 = quantile(handgun, c(.75)), Top1_percent = quantile(handgun, c(.99)))
+
+# Long-Gun Permits
+df_sum_long_gun &lt;- df_merged %&gt;% summarize(Mean=mean(long_gun), SD=sd(long_gun), Min=min(long_gun), Max=max(long_gun), n_Distinct = n_distinct(long_gun), Median = median(long_gun), Var = var(long_gun), Quantile_25 = quantile(long_gun, c(.25)), Quantile_75 = quantile(long_gun, c(.75)), Top1_percent = quantile(long_gun, c(.99)))
+
+# Total Gun Permits
+df_sum_totals &lt;- df_merged %&gt;% summarize(Mean=mean(totals), SD=sd(totals), Min=min(totals), Max=max(totals), n_Distinct = n_distinct(totals), Median = median(totals), Var = var(totals), Quantile_25 = quantile(totals, c(.25)), Quantile_75 = quantile(totals, c(.75)), Top1_percent = quantile(totals, c(.99)))
+
+# Table of Summary Statistics for All Numerical Variables
+summary_stats_overall &lt;- bind_rows(df_sum_deaths, df_sum_handgun, df_sum_long_gun, df_sum_totals)
+
+summary_stats_overall$Variable &lt;- c(&#39;Gun Deaths&#39;
+                            ,&#39;Handgun Permits&#39;
+                            ,&#39;Long-gun Permits&#39;
+                            ,&#39;Total Permits&#39;)
+
+summary_stats_overall &lt;- summary_stats_overall[,c(ncol(summary_stats_overall),1:(ncol(summary_stats_overall)-1))]</code></pre>
+<div id="summary-statistics-for-quant-variables" class="section level3">
+<h3>Summary Statistics for Quant Variables</h3>
+<pre class="r"><code>summary_stats_overall %&gt;% kable() %&gt;% kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Variable
+</th>
+<th style="text-align:right;">
+Mean
+</th>
+<th style="text-align:right;">
+SD
+</th>
+<th style="text-align:right;">
+Min
+</th>
+<th style="text-align:right;">
+Max
+</th>
+<th style="text-align:right;">
+n_Distinct
+</th>
+<th style="text-align:right;">
+Median
+</th>
+<th style="text-align:right;">
+Var
+</th>
+<th style="text-align:right;">
+Quantile_25
+</th>
+<th style="text-align:right;">
+Quantile_75
+</th>
+<th style="text-align:right;">
+Top1_percent
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Gun Deaths
+</td>
+<td style="text-align:right;">
+2955.917
+</td>
+<td style="text-align:right;">
+309.5429
+</td>
+<td style="text-align:right;">
+2158
+</td>
+<td style="text-align:right;">
+3565
+</td>
+<td style="text-align:right;">
+104
+</td>
+<td style="text-align:right;">
+2920.5
+</td>
+<td style="text-align:right;">
+9.581681e+04
+</td>
+<td style="text-align:right;">
+2753.25
+</td>
+<td style="text-align:right;">
+3212.5
+</td>
+<td style="text-align:right;">
+3539.51
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Handgun Permits
+</td>
+<td style="text-align:right;">
+513624.944
+</td>
+<td style="text-align:right;">
+165083.3679
+</td>
+<td style="text-align:right;">
+259339
+</td>
+<td style="text-align:right;">
+1201747
+</td>
+<td style="text-align:right;">
+108
+</td>
+<td style="text-align:right;">
+501098.0
+</td>
+<td style="text-align:right;">
+2.725252e+10
+</td>
+<td style="text-align:right;">
+400458.25
+</td>
+<td style="text-align:right;">
+612172.5
+</td>
+<td style="text-align:right;">
+880732.45
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Long-gun Permits
+</td>
+<td style="text-align:right;">
+476349.870
+</td>
+<td style="text-align:right;">
+160634.4582
+</td>
+<td style="text-align:right;">
+276793
+</td>
+<td style="text-align:right;">
+1224465
+</td>
+<td style="text-align:right;">
+108
+</td>
+<td style="text-align:right;">
+433011.0
+</td>
+<td style="text-align:right;">
+2.580343e+10
+</td>
+<td style="text-align:right;">
+369667.50
+</td>
+<td style="text-align:right;">
+544235.0
+</td>
+<td style="text-align:right;">
+872630.10
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Total Permits
+</td>
+<td style="text-align:right;">
+1788195.907
+</td>
+<td style="text-align:right;">
+471889.9600
+</td>
+<td style="text-align:right;">
+998262
+</td>
+<td style="text-align:right;">
+3308199
+</td>
+<td style="text-align:right;">
+108
+</td>
+<td style="text-align:right;">
+1749572.0
+</td>
+<td style="text-align:right;">
+2.226801e+11
+</td>
+<td style="text-align:right;">
+1393384.50
+</td>
+<td style="text-align:right;">
+2046379.5
+</td>
+<td style="text-align:right;">
+2775195.70
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="summary-statistics-for-deaths-grouped-by-year" class="section level3">
+<h3>Summary Statistics for Deaths Grouped by Year</h3>
+<pre class="r"><code>df_merged %&gt;% group_by(year) %&gt;% summarize(Mean=mean(Deaths), SD=sd(Deaths), Min=min(Deaths), Max=max(Deaths), n_Distinct = n_distinct(Deaths), Median = median(Deaths), Var = var(Deaths), Quantile_25 = quantile(Deaths, c(.25)), Quantile_75 = quantile(Deaths, c(.75)), Top1_percent = quantile(Deaths, c(.99)))%&gt;% kable() %&gt;% kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+year
+</th>
+<th style="text-align:right;">
+Mean
+</th>
+<th style="text-align:right;">
+SD
+</th>
+<th style="text-align:right;">
+Min
+</th>
+<th style="text-align:right;">
+Max
+</th>
+<th style="text-align:right;">
+n_Distinct
+</th>
+<th style="text-align:right;">
+Median
+</th>
+<th style="text-align:right;">
+Var
+</th>
+<th style="text-align:right;">
+Quantile_25
+</th>
+<th style="text-align:right;">
+Quantile_75
+</th>
+<th style="text-align:right;">
+Top1_percent
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+2010
+</td>
+<td style="text-align:right;">
+2639.333
+</td>
+<td style="text-align:right;">
+182.9602
+</td>
+<td style="text-align:right;">
+2183
+</td>
+<td style="text-align:right;">
+2933
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2661.0
+</td>
+<td style="text-align:right;">
+33474.42
+</td>
+<td style="text-align:right;">
+2578.50
+</td>
+<td style="text-align:right;">
+2734.00
+</td>
+<td style="text-align:right;">
+2915.51
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2011
+</td>
+<td style="text-align:right;">
+2695.917
+</td>
+<td style="text-align:right;">
+218.7337
+</td>
+<td style="text-align:right;">
+2158
+</td>
+<td style="text-align:right;">
+3052
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2702.5
+</td>
+<td style="text-align:right;">
+47844.45
+</td>
+<td style="text-align:right;">
+2623.25
+</td>
+<td style="text-align:right;">
+2834.75
+</td>
+<td style="text-align:right;">
+3030.66
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2012
+</td>
+<td style="text-align:right;">
+2796.917
+</td>
+<td style="text-align:right;">
+172.8260
+</td>
+<td style="text-align:right;">
+2357
+</td>
+<td style="text-align:right;">
+3026
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2793.0
+</td>
+<td style="text-align:right;">
+29868.81
+</td>
+<td style="text-align:right;">
+2740.50
+</td>
+<td style="text-align:right;">
+2877.50
+</td>
+<td style="text-align:right;">
+3023.03
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2013
+</td>
+<td style="text-align:right;">
+2803.000
+</td>
+<td style="text-align:right;">
+162.5468
+</td>
+<td style="text-align:right;">
+2375
+</td>
+<td style="text-align:right;">
+3079
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2807.0
+</td>
+<td style="text-align:right;">
+26421.45
+</td>
+<td style="text-align:right;">
+2763.25
+</td>
+<td style="text-align:right;">
+2862.50
+</td>
+<td style="text-align:right;">
+3061.51
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2014
+</td>
+<td style="text-align:right;">
+2799.500
+</td>
+<td style="text-align:right;">
+168.5238
+</td>
+<td style="text-align:right;">
+2360
+</td>
+<td style="text-align:right;">
+2970
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2862.5
+</td>
+<td style="text-align:right;">
+28400.27
+</td>
+<td style="text-align:right;">
+2737.25
+</td>
+<td style="text-align:right;">
+2890.75
+</td>
+<td style="text-align:right;">
+2965.71
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:right;">
+3021.000
+</td>
+<td style="text-align:right;">
+205.8755
+</td>
+<td style="text-align:right;">
+2489
+</td>
+<td style="text-align:right;">
+3345
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+3036.5
+</td>
+<td style="text-align:right;">
+42384.73
+</td>
+<td style="text-align:right;">
+2961.00
+</td>
+<td style="text-align:right;">
+3090.50
+</td>
+<td style="text-align:right;">
+3330.15
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:right;">
+3221.500
+</td>
+<td style="text-align:right;">
+198.8250
+</td>
+<td style="text-align:right;">
+2756
+</td>
+<td style="text-align:right;">
+3500
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+3230.5
+</td>
+<td style="text-align:right;">
+39531.36
+</td>
+<td style="text-align:right;">
+3157.75
+</td>
+<td style="text-align:right;">
+3292.25
+</td>
+<td style="text-align:right;">
+3499.67
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:right;">
+3314.417
+</td>
+<td style="text-align:right;">
+173.0310
+</td>
+<td style="text-align:right;">
+2921
+</td>
+<td style="text-align:right;">
+3533
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+3319.5
+</td>
+<td style="text-align:right;">
+29939.72
+</td>
+<td style="text-align:right;">
+3256.00
+</td>
+<td style="text-align:right;">
+3446.25
+</td>
+<td style="text-align:right;">
+3530.47
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:right;">
+3311.667
+</td>
+<td style="text-align:right;">
+177.4067
+</td>
+<td style="text-align:right;">
+2957
+</td>
+<td style="text-align:right;">
+3565
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+3340.0
+</td>
+<td style="text-align:right;">
+31473.15
+</td>
+<td style="text-align:right;">
+3245.25
+</td>
+<td style="text-align:right;">
+3408.00
+</td>
+<td style="text-align:right;">
+3562.25
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="summary-statistics-for-total-permits-grouped-by-year" class="section level3">
+<h3>Summary Statistics for Total Permits Grouped by Year</h3>
+<pre class="r"><code>df_merged %&gt;% group_by(year) %&gt;% summarize(Mean=mean(totals), SD=sd(totals), Min=min(totals), Max=max(totals), n_Distinct = n_distinct(totals), Median = median(totals), Var = var(totals), Quantile_25 = quantile(totals, c(.25)), Quantile_75 = quantile(totals, c(.75)), Top1_percent = quantile(totals, c(.99))) %&gt;% kable() %&gt;% kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+year
+</th>
+<th style="text-align:right;">
+Mean
+</th>
+<th style="text-align:right;">
+SD
+</th>
+<th style="text-align:right;">
+Min
+</th>
+<th style="text-align:right;">
+Max
+</th>
+<th style="text-align:right;">
+n_Distinct
+</th>
+<th style="text-align:right;">
+Median
+</th>
+<th style="text-align:right;">
+Var
+</th>
+<th style="text-align:right;">
+Quantile_25
+</th>
+<th style="text-align:right;">
+Quantile_75
+</th>
+<th style="text-align:right;">
+Top1_percent
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+2010
+</td>
+<td style="text-align:right;">
+1193374
+</td>
+<td style="text-align:right;">
+154160.9
+</td>
+<td style="text-align:right;">
+998262
+</td>
+<td style="text-align:right;">
+1512265
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+1183320
+</td>
+<td style="text-align:right;">
+23765573274
+</td>
+<td style="text-align:right;">
+1077492
+</td>
+<td style="text-align:right;">
+1288017
+</td>
+<td style="text-align:right;">
+1495504
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2011
+</td>
+<td style="text-align:right;">
+1361394
+</td>
+<td style="text-align:right;">
+194286.9
+</td>
+<td style="text-align:right;">
+1147355
+</td>
+<td style="text-align:right;">
+1854400
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+1322190
+</td>
+<td style="text-align:right;">
+37747392739
+</td>
+<td style="text-align:right;">
+1238421
+</td>
+<td style="text-align:right;">
+1444066
+</td>
+<td style="text-align:right;">
+1818436
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2012
+</td>
+<td style="text-align:right;">
+1621986
+</td>
+<td style="text-align:right;">
+422433.2
+</td>
+<td style="text-align:right;">
+1289585
+</td>
+<td style="text-align:right;">
+2776105
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+1482717
+</td>
+<td style="text-align:right;">
+178449824071
+</td>
+<td style="text-align:right;">
+1352960
+</td>
+<td style="text-align:right;">
+1720005
+</td>
+<td style="text-align:right;">
+2690481
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2013
+</td>
+<td style="text-align:right;">
+1747225
+</td>
+<td style="text-align:right;">
+419708.9
+</td>
+<td style="text-align:right;">
+1270817
+</td>
+<td style="text-align:right;">
+2483230
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+1690777
+</td>
+<td style="text-align:right;">
+176155595154
+</td>
+<td style="text-align:right;">
+1404457
+</td>
+<td style="text-align:right;">
+2073845
+</td>
+<td style="text-align:right;">
+2462916
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2014
+</td>
+<td style="text-align:right;">
+1738353
+</td>
+<td style="text-align:right;">
+363084.4
+</td>
+<td style="text-align:right;">
+1375135
+</td>
+<td style="text-align:right;">
+2476610
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+1623232
+</td>
+<td style="text-align:right;">
+131830279704
+</td>
+<td style="text-align:right;">
+1469110
+</td>
+<td style="text-align:right;">
+1866367
+</td>
+<td style="text-align:right;">
+2457335
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:right;">
+1918857
+</td>
+<td style="text-align:right;">
+482330.1
+</td>
+<td style="text-align:right;">
+1518852
+</td>
+<td style="text-align:right;">
+3308199
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+1774988
+</td>
+<td style="text-align:right;">
+232642308438
+</td>
+<td style="text-align:right;">
+1670668
+</td>
+<td style="text-align:right;">
+1977247
+</td>
+<td style="text-align:right;">
+3190307
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:right;">
+2285459
+</td>
+<td style="text-align:right;">
+308976.3
+</td>
+<td style="text-align:right;">
+1836788
+</td>
+<td style="text-align:right;">
+2763115
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2256854
+</td>
+<td style="text-align:right;">
+95466355272
+</td>
+<td style="text-align:right;">
+2088400
+</td>
+<td style="text-align:right;">
+2543731
+</td>
+<td style="text-align:right;">
+2745686
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:right;">
+2079660
+</td>
+<td style="text-align:right;">
+261256.0
+</td>
+<td style="text-align:right;">
+1733308
+</td>
+<td style="text-align:right;">
+2575486
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2024563
+</td>
+<td style="text-align:right;">
+68254675509
+</td>
+<td style="text-align:right;">
+1894409
+</td>
+<td style="text-align:right;">
+2261518
+</td>
+<td style="text-align:right;">
+2558685
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:right;">
+2147453
+</td>
+<td style="text-align:right;">
+283786.3
+</td>
+<td style="text-align:right;">
+1806746
+</td>
+<td style="text-align:right;">
+2753881
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2029793
+</td>
+<td style="text-align:right;">
+80534686953
+</td>
+<td style="text-align:right;">
+1965719
+</td>
+<td style="text-align:right;">
+2310956
+</td>
+<td style="text-align:right;">
+2727856
+</td>
+</tr>
+</tbody>
+</table>
+<p>#Visualizing</p>
+</div>
+<div id="correlation-heatmap" class="section level3">
+<h3>Correlation Heatmap</h3>
+<p>The correlation matrix suggests that total gun permits administered does not necessariy correlate with the number of gun deaths. Long gun permits is negatively correlated with gun deaths. Although, the matrix suggests that deaths are not strongly correlated with total number of gun permits (including handguns and long guns), there may be other confounding variables.</p>
+<pre class="r"><code>install.packages(&quot;ggplot2&quot;)</code></pre>
+<pre><code>## Warning: package &#39;ggplot2&#39; is in use and will not be installed</code></pre>
+<pre class="r"><code># Drop non-numeric variables 
+onlynumeric &lt;- df_merged %&gt;% select(-monthsort,-year,-month)
+cormat &lt;- round(cor(onlynumeric),2)
+
+# Get lower triangle of the correlation matrix
+  get_lower_tri&lt;-function(cormat){
+    cormat[upper.tri(cormat)] &lt;- NA
+    return(cormat)
+  }
+# Get upper triangle of the correlation matrix
+  get_upper_tri &lt;- function(cormat){
+    cormat[lower.tri(cormat)]&lt;- NA
+    return(cormat)
+  }
+upper_tri &lt;- get_upper_tri(cormat)
+
+# Melt the correlation matrix
+melted_cormat &lt;- melt(upper_tri, na.rm = TRUE)
+
+# Heatmap
+ggheatmap &lt;- ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = &quot;white&quot;)+
+ scale_fill_gradient2(low = &quot;blue&quot;, high = &quot;red&quot;, mid = &quot;white&quot;, 
+   midpoint = 0, limit = c(-1,1), space = &quot;Lab&quot;, 
+   name=&quot;Correlation&quot;) +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+
+ggheatmap + geom_text(aes(Var2, Var1, label = value), color = &quot;black&quot;, size = 4) +
+theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.border = element_blank(),
+  panel.background = element_blank(),
+  axis.ticks = element_blank(),
+  legend.justification = c(1, 0),
+  legend.position = c(0.6, 0.7),
+  legend.direction = &quot;horizontal&quot;)+
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+                title.position = &quot;top&quot;, title.hjust = 0.5))</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p>#ggplots</p>
+<p>Three ggplots were created to visualize any relationships/trends that were apparent. In the first plot, total gun deaths and total gun permits were plotted against years. It suggests that while there is an increasing trend for gun deaths every year, there doesn’t seem to be an obvious trend for total gun permits and total gun deaths. In the second plot, total gun deaths was plotted against each month of 2018; there was no apparent increasing trend between total gun permits and total gun deaths during each month of 2018. In the last plot, there is an increasing trend between mean gun deaths and year in the U.S.</p>
+<pre class="r"><code># plot 1
+plot&lt;-ggplot(data = df_merged, aes(x = year, y = Deaths, color=totals)) + geom_point(size=2) + theme_minimal() + scale_color_gradient(low=&quot;yellow&quot;,high=&quot;red&quot;)+
+ggtitle(&quot;Gun Deaths Per Year Given Total Gun Permits in the U.S.&quot;) + ylab(&quot;Total Gun Deaths&quot;) + xlab(&quot;Year&quot;)
+plot</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code># plot 2
+plot2&lt;-ggplot(data = df_2018, aes(x = month, y = Deaths, color=totals)) + geom_point(size=2) + theme_minimal() + scale_color_gradient(low=&quot;yellow&quot;,high=&quot;red&quot;)+
+ggtitle(&quot;Gun Deaths in 2018 Given Total Gun Permits in the U.S.&quot;) + ylab(&quot;Total Gun Deaths&quot;) + xlab(&quot;Months&quot;)
+plot2</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-15-2.png" width="672" /></p>
+<pre class="r"><code># plot 3
+ggplot(df_merged, aes(x=year))+geom_bar(aes(y=Deaths), stat=&quot;summary&quot;, fun.y=&quot;mean&quot;)+ scale_y_continuous(name=&quot;Mean Deaths&quot;, breaks=c(0,500,1000,1500,2000,2500,3000,3500))+ggtitle(&quot;Mean Gun Deaths Per Year in the U.S.&quot;) + ylab(&quot;Total Mean Gun Deaths&quot;) + xlab(&quot;Year&quot;)+theme_minimal()</code></pre>
+<pre><code>## Warning: Ignoring unknown parameters: fun.y</code></pre>
+<pre><code>## No summary function supplied, defaulting to `mean_se()`</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-15-3.png" width="672" /></p>
+<p>#PAM Clustering</p>
+<p>Four df_merged measurements (handgun, long_gun, Deaths, totals) were used for PAM clustering, and two original variables (Year and Gun Deaths) were visualized and in clusters based on 4 variables. Although 2 clusters was suggested, 3 were used. There seems to be slight, but weak clustering, and the average silhouette width of 0.49 suggests that the structure is weak and could be artifical.</p>
+<pre class="r"><code># PAM clustering by dropping non-numeric variables
+pam2 &lt;- df_merged%&gt;%select(-year, -monthsort, -month)%&gt;%pam(3)
+
+# Number of clusters in PAM
+sil_width&lt;-vector()
+for(i in 2:10){
+pam_fit &lt;- df_merged%&gt;%select(-year, -monthsort, -month)%&gt;%pam(i)
+sil_width[i] &lt;- pam_fit$silinfo$avg.width
+} 
+ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name=&quot;k&quot;,breaks=1:10)</code></pre>
+<pre><code>## Warning: Removed 1 row(s) containing missing values (geom_path).</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<pre class="r"><code>final&lt;-df_merged%&gt;%mutate(cluster=as.factor(pam2$clustering))
+confmat&lt;-final%&gt;%group_by(year)%&gt;%count(cluster)%&gt;%arrange(desc(n))%&gt;%
+pivot_wider(names_from=&quot;cluster&quot;,values_from=&quot;n&quot;,values_fill = list(&#39;n&#39;=0))
+
+#accuracy
+round(sum(diag(as.matrix(confmat[,2:4])))/sum(confmat[,2:4]),4)</code></pre>
+<pre><code>## [1] 0.1389</code></pre>
+<pre class="r"><code>ggplot(final, aes(x=year,y=Deaths, color=cluster))+geom_point()+ylab(&quot;Gun Deaths&quot;)+ xlab(&quot;Year&quot;)</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-16-2.png" width="672" /></p>
+<pre class="r"><code>#Interpreting Average Silhouette Width 
+plot(pam2,which=2)</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-16-3.png" width="672" /></p>
+<pre><code>## R version 4.0.0 (2020-04-24)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 18362)
+## 
+## Matrix products: default
+## 
+## locale:
+## [1] LC_COLLATE=English_United States.1252 
+## [2] LC_CTYPE=English_United States.1252   
+## [3] LC_MONETARY=English_United States.1252
+## [4] LC_NUMERIC=C                          
+## [5] LC_TIME=English_United States.1252    
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] kableExtra_1.1.0 knitr_1.28       reshape2_1.4.4   tidyr_1.0.3     
+## [5] cluster_2.1.0    ggplot2_3.3.0    dplyr_0.8.5      stringr_1.4.0   
+## [9] stringi_1.4.6   
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.4.6      highr_0.8         pillar_1.4.4      compiler_4.0.0   
+##  [5] plyr_1.8.6        tools_4.0.0       digest_0.6.25     viridisLite_0.3.0
+##  [9] evaluate_0.14     lifecycle_0.2.0   tibble_3.0.1      gtable_0.3.0     
+## [13] pkgconfig_2.0.3   rlang_0.4.6       cli_2.0.2         rstudioapi_0.11  
+## [17] yaml_2.2.1        blogdown_0.18     xfun_0.13         xml2_1.3.2       
+## [21] httr_1.4.1        withr_2.2.0       vctrs_0.2.4       hms_0.5.3        
+## [25] webshot_0.5.2     grid_4.0.0        tidyselect_1.0.0  glue_1.4.0       
+## [29] R6_2.4.1          fansi_0.4.1       rmarkdown_2.1     bookdown_0.18    
+## [33] farver_2.0.3      purrr_0.3.4       readr_1.3.1       magrittr_1.5     
+## [37] scales_1.1.0      ellipsis_0.3.0    htmltools_0.4.0   rvest_0.3.5      
+## [41] assertthat_0.2.1  colorspace_1.4-1  labeling_0.3      utf8_1.1.4       
+## [45] munsell_0.5.0     crayon_1.3.4</code></pre>
+<pre><code>## [1] &quot;2020-05-10 17:19:50 CDT&quot;</code></pre>
+<pre><code>##           sysname           release           version          nodename 
+##         &quot;Windows&quot;          &quot;10 x64&quot;     &quot;build 18362&quot; &quot;DESKTOP-LQIUJCT&quot; 
+##           machine             login              user    effective_user 
+##          &quot;x86-64&quot;           &quot;Annie&quot;           &quot;Annie&quot;           &quot;Annie&quot;</code></pre>
+</div>
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

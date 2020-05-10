@@ -1,0 +1,300 @@
+---
+title: 'Project 1: Explanatory Data Analysis'
+author: "SDS348"
+date: 'May 10, 2020'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(echo = TRUE)
+library(stringi)
+library(stringr)
+library(dplyr) 
+library(ggplot2)
+library(cluster)
+library(tidyr)
+library(reshape2)
+library(knitr)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Annie Huang (Ah48777)
+
+##Introduction 
+
+Gun Violence in U.S. results in tens of thousands of deaths and injuries every year. According to BBC, about 40% of Americans say they own a gun or live in a household with one, and the rate of murder or manslaughter by firearm is the highest in the developed world.  In the U.S. especially, gun ownership control and background checks have been heavily argued for in favor of minimizing gun deaths. Many politicians have highlighted that tightening gun control laws may decrease gun deaths. One should expect that with each administered gun permit, there is an extensive background check. Therefore, I expect that with increasing permits (more extensive background checks) there should be a decrease in gun deaths. However, I recognize that this may be idealistic; currently, gun permits are relatively easy to obtain, and there are other avenues of obtaining illegal firearms. From the CDC and FBI websites, I chose two datasets: Total Gun Deaths in the U.S. and Total Gun Permits (including long-guns and handguns) administered. Total Gun Deaths in the U.S. have two variables: Month-Code (categorical) and Deaths (numerical). Total Gun Permits in the U.S. have four variables: Month-Code (categorical), Handguns Permits (numerical), Long-gun Permits (numerical), and Total Gun Permits (including Long-Gun and Handgun Permits). 
+
+
+##Import: Import Data from Source CSV files
+
+```{R}
+# Import data frame from CSV: Data on gun related deaths 
+# in the United States from 2010 to 2018 by month
+df_gundeaths <- read.csv("usa_gun_deaths.csv")
+```
+Source: https://wonder.cdc.gov/ucd-icd10.html (CDC Database)
+
+
+```{R}
+# Import data frame from CSV: Data on background check permits
+# for firearms by NICS by month
+df_BCpermits <- read.csv("nics-firearm-background-checks.csv")
+```
+Source: https://www.fbi.gov/about-us/cjis/nics; https://github.com/BuzzFeedNews/nics-firearm-background-checks
+
+
+##General Cleaning: Clean the Columns
+
+```{R}
+
+# Select the variables of importance and drop irrelevant columns from df_gundeaths
+vars_gundeaths <- c("Month_Code", "Deaths")
+df_gundeaths <- df_gundeaths[vars_gundeaths]
+
+# Select the variables of importance and drop irrelevant columns from df_BCpermits
+vars_BCpermits <- c("month", "handgun", "long_gun", "totals")
+df_BCpermits <- df_BCpermits[vars_BCpermits]
+
+# Consolidate and sum multiple entries for a given month
+df_gundeaths <- df_gundeaths %>% group_by(Month_Code) %>% summarize_all(sum) 
+df_gundeaths
+# Use of dplyr group_by & summarize
+df_BCpermits <- df_BCpermits %>% group_by(month) %>% summarize_all(sum)
+
+
+```
+
+##Joining/Merging: Merge the Datasets
+
+```{R}
+# Rename the merge variable to be the same in both dataframes
+names(df_BCpermits)[names(df_BCpermits)=='month'] <- 'Month_Code'
+
+# Left join the two cleaned dataframes to create merged data set
+df_merged <- left_join(df_gundeaths, df_BCpermits, by='Month_Code') 
+
+# Error is due to column var type, surpressed from here forward as it is harmless.
+
+# Report number of dropped rows in the merge
+suppressWarnings(checkmerge_BCpermits <- nrow(anti_join(df_BCpermits, df_merged, by='Month_Code')))
+print(paste0("There were ", checkmerge_BCpermits, " rows in the BCpermits data that were excluded in the merged dataset"))
+
+suppressWarnings(checkmerge_gundeaths <- nrow(anti_join(df_gundeaths, df_merged, by='Month_Code')))
+print(paste0("There were ", checkmerge_gundeaths, " rows in the gundeaths data that were excluded in the merged dataset"))
+
+df_merged
+```
+
+##Wrangling 
+
+*Note: some wrangling was completed in the previous sections (group_by & summarize) and is marked by a comment*
+
+Mutate: Extract the month and year from the month code (yyyy-mm to yyyy and mm as separate columns) and create a variable to sort with
+```{R}
+df_merged <- df_merged %>% mutate(year = as.numeric(stri_sub(Month_Code, 1,4))) 
+df_merged <- df_merged %>% mutate(month = (stri_sub(Month_Code, 6,7))) 
+df_merged <- df_merged %>% mutate(monthsort = str_replace(Month_Code, '-','')) 
+```
+
+Arrange: Sort the data chronologically
+
+```{R}
+df_merged <- df_merged %>% arrange(monthsort)
+df_merged
+```
+
+Select: Drop unnecessary columns
+
+```{R}
+df_merged <- df_merged %>% select(-Month_Code)
+df_merged
+```
+
+Filter: Create new data set based on only most recent (2018) data (years are categorical for this data)
+
+```{R}
+df_2018 <- df_merged %>% filter(year == 2018)
+```
+
+
+##Tidying and Untidying
+
+The data set was already tidy, but I untidy'd and then tidy'd the data to demonstrate understanding of the functions.
+
+```{R}
+
+#Untidy the dataset
+df_merged_untidy = pivot_wider(df_merged,names_from = year, values_from = Deaths)
+
+#Tidy the dataset 
+df_merged_tidy = pivot_longer(df_merged_untidy, c('2010', '2011','2012', '2013','2014', '2015','2016', '2017','2018'), names_to = "year", values_to = "Deaths")
+
+
+```
+
+
+## Summary Statistics
+
+```{R}
+# Deaths 
+df_sum_deaths <- df_merged %>% summarize(Mean=mean(Deaths), SD=sd(Deaths), Min=min(Deaths), 
+Max=max(Deaths), n_Distinct = n_distinct(Deaths), Median = median(Deaths),  Var = var(Deaths), 
+Quantile_25 = quantile(Deaths, c(.25)), Quantile_75 = quantile(Deaths, c(.75)), Top1_percent = quantile(Deaths, c(.99)))
+
+# Handgun Permits
+df_sum_handgun <- df_merged %>% summarize(Mean=mean(handgun), SD=sd(handgun), Min=min(handgun), Max=max(handgun), n_Distinct = n_distinct(handgun), Median = median(handgun), Var = var(handgun), Quantile_25 = quantile(handgun, c(.25)), Quantile_75 = quantile(handgun, c(.75)), Top1_percent = quantile(handgun, c(.99)))
+
+# Long-Gun Permits
+df_sum_long_gun <- df_merged %>% summarize(Mean=mean(long_gun), SD=sd(long_gun), Min=min(long_gun), Max=max(long_gun), n_Distinct = n_distinct(long_gun), Median = median(long_gun), Var = var(long_gun), Quantile_25 = quantile(long_gun, c(.25)), Quantile_75 = quantile(long_gun, c(.75)), Top1_percent = quantile(long_gun, c(.99)))
+
+# Total Gun Permits
+df_sum_totals <- df_merged %>% summarize(Mean=mean(totals), SD=sd(totals), Min=min(totals), Max=max(totals), n_Distinct = n_distinct(totals), Median = median(totals), Var = var(totals), Quantile_25 = quantile(totals, c(.25)), Quantile_75 = quantile(totals, c(.75)), Top1_percent = quantile(totals, c(.99)))
+
+# Table of Summary Statistics for All Numerical Variables
+summary_stats_overall <- bind_rows(df_sum_deaths, df_sum_handgun, df_sum_long_gun, df_sum_totals)
+
+summary_stats_overall$Variable <- c('Gun Deaths'
+                            ,'Handgun Permits'
+                            ,'Long-gun Permits'
+                            ,'Total Permits')
+
+summary_stats_overall <- summary_stats_overall[,c(ncol(summary_stats_overall),1:(ncol(summary_stats_overall)-1))]
+```
+
+### Summary Statistics for Quant Variables 
+```{R}
+summary_stats_overall %>% kable() %>% kable_styling()
+```
+
+### Summary Statistics for Deaths Grouped by Year
+
+```{R}
+df_merged %>% group_by(year) %>% summarize(Mean=mean(Deaths), SD=sd(Deaths), Min=min(Deaths), Max=max(Deaths), n_Distinct = n_distinct(Deaths), Median = median(Deaths), Var = var(Deaths), Quantile_25 = quantile(Deaths, c(.25)), Quantile_75 = quantile(Deaths, c(.75)), Top1_percent = quantile(Deaths, c(.99)))%>% kable() %>% kable_styling()
+```
+
+### Summary Statistics for Total Permits Grouped by Year
+
+```{R}
+df_merged %>% group_by(year) %>% summarize(Mean=mean(totals), SD=sd(totals), Min=min(totals), Max=max(totals), n_Distinct = n_distinct(totals), Median = median(totals), Var = var(totals), Quantile_25 = quantile(totals, c(.25)), Quantile_75 = quantile(totals, c(.75)), Top1_percent = quantile(totals, c(.99))) %>% kable() %>% kable_styling()
+
+```
+
+#Visualizing 
+
+### Correlation Heatmap 
+The correlation matrix suggests that total gun permits administered does not necessariy correlate with the number of gun deaths. Long gun permits is negatively correlated with gun deaths. Although, the matrix suggests that deaths are not strongly correlated with total number of gun permits (including handguns and long guns), there may be other confounding variables. 
+
+
+```{R}
+install.packages("ggplot2")
+
+# Drop non-numeric variables 
+onlynumeric <- df_merged %>% select(-monthsort,-year,-month)
+cormat <- round(cor(onlynumeric),2)
+
+# Get lower triangle of the correlation matrix
+  get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+  }
+# Get upper triangle of the correlation matrix
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+upper_tri <- get_upper_tri(cormat)
+
+# Melt the correlation matrix
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+# Heatmap
+ggheatmap <- ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Correlation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+
+ggheatmap + geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.border = element_blank(),
+  panel.background = element_blank(),
+  axis.ticks = element_blank(),
+  legend.justification = c(1, 0),
+  legend.position = c(0.6, 0.7),
+  legend.direction = "horizontal")+
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+                title.position = "top", title.hjust = 0.5))
+
+  
+```
+
+#ggplots 
+
+Three ggplots were created to visualize any relationships/trends that were apparent. In the first plot, total gun deaths and total gun permits were plotted against years. It suggests that while there is an increasing trend for gun deaths every year, there doesn't seem to be an obvious trend for total gun permits and total gun deaths. In the second plot, total gun deaths was plotted against each month of 2018; there was no apparent increasing trend between total gun permits and total gun deaths during each month of 2018. In the last plot, there is an increasing trend between mean gun deaths and year in the U.S. 
+
+```{R}
+# plot 1
+plot<-ggplot(data = df_merged, aes(x = year, y = Deaths, color=totals)) + geom_point(size=2) + theme_minimal() + scale_color_gradient(low="yellow",high="red")+
+ggtitle("Gun Deaths Per Year Given Total Gun Permits in the U.S.") + ylab("Total Gun Deaths") + xlab("Year")
+plot
+
+# plot 2
+plot2<-ggplot(data = df_2018, aes(x = month, y = Deaths, color=totals)) + geom_point(size=2) + theme_minimal() + scale_color_gradient(low="yellow",high="red")+
+ggtitle("Gun Deaths in 2018 Given Total Gun Permits in the U.S.") + ylab("Total Gun Deaths") + xlab("Months")
+plot2
+
+# plot 3
+ggplot(df_merged, aes(x=year))+geom_bar(aes(y=Deaths), stat="summary", fun.y="mean")+ scale_y_continuous(name="Mean Deaths", breaks=c(0,500,1000,1500,2000,2500,3000,3500))+ggtitle("Mean Gun Deaths Per Year in the U.S.") + ylab("Total Mean Gun Deaths") + xlab("Year")+theme_minimal()
+```
+
+#PAM Clustering 
+
+Four df_merged measurements (handgun, long_gun, Deaths, totals) were used for PAM clustering, and two original variables (Year and Gun Deaths) were visualized and in clusters based on 4 variables. Although 2 clusters was suggested, 3 were used. There seems to be slight, but weak clustering, and the average silhouette width of 0.49 suggests that the structure is weak and could be artifical. 
+
+
+```{R}
+# PAM clustering by dropping non-numeric variables
+pam2 <- df_merged%>%select(-year, -monthsort, -month)%>%pam(3)
+
+# Number of clusters in PAM
+sil_width<-vector()
+for(i in 2:10){
+pam_fit <- df_merged%>%select(-year, -monthsort, -month)%>%pam(i)
+sil_width[i] <- pam_fit$silinfo$avg.width
+} 
+ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name="k",breaks=1:10)
+
+
+final<-df_merged%>%mutate(cluster=as.factor(pam2$clustering))
+confmat<-final%>%group_by(year)%>%count(cluster)%>%arrange(desc(n))%>%
+pivot_wider(names_from="cluster",values_from="n",values_fill = list('n'=0))
+
+#accuracy
+round(sum(diag(as.matrix(confmat[,2:4])))/sum(confmat[,2:4]),4)
+
+ggplot(final, aes(x=year,y=Deaths, color=cluster))+geom_point()+ylab("Gun Deaths")+ xlab("Year")
+
+#Interpreting Average Silhouette Width 
+plot(pam2,which=2)
+
+
+```
+
+```{R, echo=F}
+## DO NOT DELETE THIS BLOCK!
+sessionInfo()
+Sys.time()
+Sys.info()
+```
+

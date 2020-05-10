@@ -1,0 +1,509 @@
+---
+title: 'Project 2: Modeling, Testing, and Predicting'
+author: "Annie Huang (Ah48777)"
+date: "SDS348"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+---
+
+```{r setup, include=FALSE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+
+knitr::opts_chunk$set(echo = TRUE, eval=TRUE,fig.align="center",warning=FALSE,message=FALSE,fig.width=8, fig.height=5, linewidth=60)
+options(tibble.width = 100,width = 100)
+library(stringi)
+library(stringr)
+library(tidyverse)
+library(dplyr) 
+library(ggplot2)
+library(tidyr)
+library(mvtnorm)
+library(plotROC)
+library(glmnet)
+library(sandwich)
+library(interactions)
+library(gplots)
+library(ROCR)
+library(pROC)
+library(lmtest)
+```
+
+
+#Introduction 
+
+Gun Violence in U.S. results in tens of thousands of deaths and injuries every year. According to BBC, about 40% of Americans say they own a gun or live in a household with one, and the rate of murder or manslaughter by firearm is the highest in the developed world.  In the U.S. especially, gun ownership control and background checks have been heavily argued for in favor of minimizing gun deaths. Many politicians have highlighted that tightening gun control laws may decrease gun deaths. One should expect that with each administered gun permit, there is an extensive background check. Therefore, I expect that with increasing permits (more extensive background checks) there should be a decrease in gun deaths. However, I recognize that this may be idealistic; currently, gun permits are relatively easy to obtain, and there are other avenues of obtaining illegal firearms. 
+
+From the CDC and FBI websites, I chose two datasets: Total Gun Deaths in the U.S. and Total Gun Permits (including long-guns and handguns) administered. Total Gun Deaths in the U.S. has two variables: Month-Code (categorical, 108 observations) and Deaths (numerical, 108 observations). Total Gun Permits in the U.S. has four variables: Month-Code (categorical, 108 obs), Handguns Permits (numerical, 108 obs), Long-gun Permits (numerical, 108 obs), and Total Gun Permits (including Long-Gun and Handgun Permits, 108 obs)*. 
+
+*From merged dataset/after wrangling
+Source: https://wonder.cdc.gov/ucd-icd10.html (CDC Database)
+Source: https://www.fbi.gov/about-us/cjis/nics; https://github.com/BuzzFeedNews/nics-firearm-background-checks
+
+```{r , include=FALSE}
+# Import data frame from CSV: Data on gun related deaths 
+# in the United States from 2010 to 2018 by month
+df_gundeaths <- read.csv("usa_gun_deaths.csv")
+
+```
+
+
+```{r , include=FALSE}
+# Import data frame from CSV: Data on background check permits
+# for firearms by NICS by month
+df_BCpermits <- read.csv("nics-firearm-background-checks.csv")
+```
+
+
+```{r , include=FALSE}
+##General Cleaning: Clean the Column
+# Select the variables of importance and drop irrelevant columns from df_gundeaths
+vars_gundeaths <- c("Month_Code", "Deaths")
+df_gundeaths <- df_gundeaths[vars_gundeaths]
+
+# Select the variables of importance and drop irrelevant columns from df_BCpermits
+vars_BCpermits <- c("month", "handgun", "long_gun", "totals")
+df_BCpermits <- df_BCpermits[vars_BCpermits]
+
+# Consolidate and sum multiple entries for a given month
+df_gundeaths <- df_gundeaths %>% group_by(Month_Code) %>% summarize_each(funs(sum))
+
+# Use of dplyr group_by & summarize
+df_BCpermits <- df_BCpermits %>% group_by(month) %>% summarize_each(funs(sum))
+
+```
+
+
+```{r , include=FALSE}
+##Joining/Merging: Merge the Datasets
+# Rename the merge variable to be the same in both dataframes
+names(df_BCpermits)[names(df_BCpermits)=='month'] <- 'Month_Code'
+
+# Left join the two cleaned dataframes to create merged data set
+df_merged <- left_join(df_gundeaths, df_BCpermits, by='Month_Code') 
+
+# Error is due to column var type, surpressed from here forward as it is harmless.
+
+# Report number of dropped rows in the merge
+suppressWarnings(checkmerge_BCpermits <- nrow(anti_join(df_BCpermits, df_merged, by='Month_Code')))
+print(paste0("There were ", checkmerge_BCpermits, " rows in the BCpermits data that were excluded in the merged dataset"))
+
+suppressWarnings(checkmerge_gundeaths <- nrow(anti_join(df_gundeaths, df_merged, by='Month_Code')))
+print(paste0("There were ", checkmerge_gundeaths, " rows in the gundeaths data that were excluded in the merged dataset"))
+
+```
+
+
+```{r , include=FALSE}
+#Mutate: Extract the month and year from the month code (yyyy-mm to yyyy and mm as separate columns) and create a variable to sort with
+df_merged <- df_merged %>% mutate(year = as.numeric(stri_sub(Month_Code, 1,4))) 
+df_merged <- df_merged %>% mutate(month = (stri_sub(Month_Code, 6,7))) 
+df_merged <- df_merged %>% mutate(monthsort = str_replace(Month_Code, '-','')) 
+```
+
+
+```{r , include=FALSE}
+#Arrange: Sort the data chronologically
+df_merged <- df_merged %>% arrange(monthsort)
+```
+
+
+```{r , include=FALSE}
+#Select: Drop unnecessary columns
+df_merged <- df_merged %>% select(-Month_Code)
+
+```
+
+
+##MANOVA 
+
+There are many MANOVA assumptions, and the following are likely to be met:
+1. Independent observations 
+2. Multivariate normality of DVs (n=25+)
+3. No multicollinearity 
+4. Homogeneity of within-group covariances matrices 
+
+The following are unlikely to be met: 
+1. Random Samples: dataset is not random 
+2. Linear Relationships among DVs: from Project 1, there was low correlation among DVs. 
+3. No extreme univariate or multivariate outlier: From Project 1, there were a few extreme outliers
+
+*Ho: For both DVs (Long_gun permits, Handgun permits), means for each year are equal.* 
+
+*Ha: For at least one DV, at least one year mean is different*
+
+Post hoc analysis was performed conducting pairwise comparisons to determine which Year differed in handguns and long_gun. Some years (2010 & 2013,2014,2015, 2016, 2017, 2018; 2011 & 2013,2015,2016,2017,2018; 2012 & 2016) were found to differ significantly from each other in terms of handgun after adjusting for multiple comparisons (bonferroni alpha=0.05/75=0.0006).
+
+```{R}
+##Since results are significant, univariate ANOVAs and post-hoc t-test will be run
+man1<-manova(cbind(handgun,long_gun)~year, data=df_merged)
+summary(man1)
+
+#get univariate ANOVAs
+summary.aov(man1) 
+
+#Using the Bonferroni method for controlling Type I error rates for multiple comparisons. The univariate ANOVAs for handgun was significant
+
+#Only Handgun is significant: at least one year differs 
+
+df_merged%>%group_by(year)%>%summarize(mean(long_gun),mean(handgun))
+
+pairwise.t.test(df_merged$long_gun,
+df_merged$year, p.adj="none")
+
+pairwise.t.test(df_merged$handgun,
+df_merged$year, p.adj="none")
+
+#Did 1 MANOVA, 2 ANOVAS, and 72 t tests (75 test), so should use alpha= 0.05/75=0.00066
+
+```
+
+
+##Randomization Test
+
+I chose to do months December and February based on a graph I saw online that saw February with highest number of gun deaths and December with lowest number of gun deaths. I wanted to see if this was true using my dataset. 
+
+*Ho:mean gun deaths is the same for December (12) and February (2)*
+
+*Ha: mean gun deaths is different for December (12) and February (2)*
+
+After testing what proportion of our mean differences (stimulated under the null hypothesis) are more extreme than the acutal value of +/-414.111: 
+
+*p-value: 0.0056* p-value corresponds to the probability of observing a mean difference as extreme as the one observed in our original data. 
+
+*Since p-value is less than alpha = 0.05, we reject the null hypothesis.* Mean gun deaths is different for December and February. 
+
+```{R}
+
+Feb<-df_merged%>%filter(month=="02")%>%select(Deaths)
+Feb<-c(2183,2158,2357,2375,2360,2489,2756,2921,2957)
+
+Dec<-df_merged%>%filter(month=="12")%>%select(Deaths)
+Dec<-c(2582,2638,2791,2765,2856,3065,3127,3270,3189)
+
+
+df_random<-data.frame(Month=c(rep("Dec",9),rep("Feb",9)), Deaths=c(Feb, Dec))
+
+head(df_random)
+
+#ggplot
+ggplot(df_random,aes(Deaths,fill=Month))+geom_histogram(bins=6.5)+facet_wrap(~Month,ncol=2)+theme(legend.position="none")
+
+#randomization test
+df_random%>%group_by(Month)%>%
+  summarize(means=mean(Deaths))%>%summarize(`mean_diff:`=diff(means))
+
+#Doing this 5,000 times
+rand_dist<-vector()
+for(i in 1:5000){
+new<-data.frame(Deaths=sample(df_random$Deaths),Month=df_random$Month)
+rand_dist[i]<-mean(new[new$Month=="Dec",]$Deaths)-
+mean(new[new$Month=="Feb",]$Deaths)}
+
+#histogram
+{hist(rand_dist,main="",ylab=""); abline(v = 414.1111,col="red");abline(v = -414.1111,col="red")}
+
+
+#two tailed p-value
+mean(rand_dist>414.1111|rand_dist < -414.111)
+
+t.test(data=df_random, Deaths~Month)
+```
+
+
+##Linear Regression Model with Interactions
+
+###Interpreting the coefficient estimates 
+
+Controlling for # of long gun permits, there is a significant effect of # of hand gun permits administered on gun deaths, and vice versa. For every one unit increase in hand gun permits, gun deaths increase 1.075e-03 persons on average. For every one unit increase in long gun permits, gun deaths decrease 1.018e-03 persons on average. However, the interaction between long gun and hand gun permits are not significant on gun deaths. 
+
+After recomputing regression using robust standard errors, the results on significance still stay the same. This is expected since the corrected SEs are robust to violations of homoskedasticity. Our assumptions of homoskedasticity was normal, so our significance results did not change. 
+
+27.3% of the variation in deaths is explained by the regression line. 
+
+
+```{R}
+#Mean centering numeric variables 
+##long_guns permits 
+
+df_merged$longgun_c<-data.frame(long_guns_c=df_merged$long_gun-mean(df_merged$long_gun))
+                                
+##handgun permits
+
+df_merged$handgun_c<-data.frame(handguns_c=df_merged$handgun-mean(df_merged$handgun))
+
+unlist_longgun=unlist(df_merged$longgun_c)
+unlist_handgun=unlist(df_merged$handgun_c)
+
+#Check assumptions of linearity, normality, and homoskedasticity 
+#Passes linearity & homoskedsaticity assumption
+resids<-lm(df_merged$Deaths~unlist_handgun*unlist_longgun)$residuals
+ggplot()+geom_histogram(aes(resids),bins=10)
+
+fitted<-lm(df_merged$Deaths~unlist_handgun*unlist_longgun)$fitted.values 
+ggplot()+geom_point(aes(resids,fitted))
+
+#normality using shapiro-wilk test 
+shapiro.test(resids)
+#fails the normality assumption 
+
+#Multiple Regression
+fitt<-lm(Deaths ~ unlist_longgun*unlist_handgun,data=df_merged)
+summary(fitt)
+
+#Recompute regression results with robust standard errors
+library(lmtest)
+  #before
+  coeftest(fitt)
+
+  #after
+  coeftest(fitt, vcov=vcovHC(fitt))
+
+#Compute R^2
+summary(fitt)$r.sq
+  
+#Plot the regression using ggplot()
+new1<-df_merged
+new1$handgun_cc<-mean(unlist(df_merged$handgun_c))
+new1$mean<-predict(fitt,new1)
+
+new1$handgun_cc<-mean(unlist(df_merged$handgun_c))+sd(unlist(df_merged$handgun_c))
+new1$plus.sd<-predict(fitt,new1)
+
+new1$handgun_cc<-mean(unlist(df_merged$handgun_c))-sd(unlist(df_merged$handgun_c))
+new1$minus.sd<-predict(fitt,new1)
+
+new1$long_gun_c<-unlist(new1$longgun_c)
+
+newint<-new1%>%select(Deaths,long_gun_c,mean,plus.sd,minus.sd)%>%gather(handgun_c,value,-Deaths,-long_gun_c)
+
+mycols<-c("#619CFF","#F8766D","#00BA38")
+names(mycols)<-c("-1 sd","mean","+1 sd")
+mycols=as.factor(mycols)
+#I referred to the code near the end of WS15 
+ggplot(df_merged,aes(unlist_longgun,Deaths),group=mycols)+geom_point()+geom_line(data=new1,aes(y=mean,color="mean"))+geom_line(data=new1,aes(y=plus.sd,color="+1 sd"))+geom_line(data=new1,aes(y=minus.sd,color="-1 sd"))+scale_color_manual(values=mycols)+labs(color="Handguns (cont)")+theme(legend.position=c(.9,.2))
+
+
+#I also downloaded interactions package to graph two numeric interaction predictors against Gun Deaths 
+interact_plot(fitt, pred = unlist_longgun, modx = unlist_handgun)
+
+```
+
+    
+##Linear Regression Model with bootstrapped SEs
+
+Bootstrapped SEs were all very close compared to Regular SEs (intercept: 2.8019+01, significant, unlist_longgun:2.0906e-04, significant, unlist_handgun : 1.9447e-04, significant, unlist_longgun:unlist_handgun: 7.5650e-10, not significant) and Robust SEs (intercept: 2.8794e+01 , significant, unlist_longgun:1.6515e-04, significant, unlist_handgun : 2.0910e-04, significant, unlist_longgun:unlist_handgun: 8.2883e-10, not significant). Regular, Robust, and Bootstrapped SEs were very similar in both SEs and p-values. However, bootstrapped SEs were closer in value to Robust SEs. 
+```{R}
+
+#Recompute regression results with bootstrapped standard errors 
+##define a function that takes data, df_merged and returns bootstrap SE
+boot_dat<- sample_frac(df_merged, replace=T)
+
+# repeat 5000 times
+samp_distn<-replicate(5000, {
+boot_dat <- sample_frac(df_merged, replace=T) #bootstrap data
+fitt <- lm(Deaths ~ unlist_longgun*unlist_handgun,data=boot_dat) #fit model
+coef(fitt) #save coefs
+})
+
+
+## Estimated SEs (resampling rows)
+samp_distn %>% t %>% as.data.frame %>% summarize_all(sd)
+
+
+```
+
+
+
+##Logistic Regression
+
+*Preface: Prior to starting Project 2, I wanted to use the same dataset as Project 1 because I thought it would be more cohesive. However, more than halfway through Project 2, I realized that some of my variables did not necessarily fit the context of the models. I acknowledge that some of my predictor variables may have a far-stretched relationship with my response variables (and may not make sense). However, I will interpret the results in the same context.*  
+
+For my logisitic regression, I choose to predict whether the months were during the school year (1 for during school year, 0 for not) from the number of long gun and hand gun permits administered. 
+
+*Interpreting the coefficients:* 
+
+- Controlling for the number of longgun permits administered, going up 1 hanggun multiplies odds by a factor of 0.99.
+
+- Controlling for number of handgun permits administered, going up 1 longgun multiplies odds by a factor of 0.99.
+
+- Controlling for both hanggun and longgun permits administered, odds increases by 4.021e+05.
+
+- Only the number of longgun permits administered is significant in predicting whether the months are during the school year or not. 
+
+The accuracy or the proportion of correctly identified months is (6+97/108)= .95. 
+
+The probability of no-school months that are correctly classified (TNR) is 6/9 = 0.666.
+
+The probability of correctly identifying the month occuring during the school season when it really is a school month (PPV) is 97/99=.979. 
+
+*Interpreting AUC & ROC:*
+  ROC is a probability curve and AUC represents degree or measure of separability. It tells how much the model is capable of distinguishing between classes. The higher the AUC, better the model is at correctly predicting/distinguishing 0s as 0s and 1s as 1s. The ROC curve shows the trade-off between sensitivity and specificity. Classifiers that give curves to the top-left indicate a better performance; the baseline is the 45 degree diagonal of the ROCplot. The closer to the 45 degree diagonal, the less accurate the test. In this case, the ROC curve gives a near perfect top-left curve and area under the curve is 0.9708 (there is 97.08% probability that a randomly selected school month (y=1) has a higher predicted probability than a randomly selected non-school month (y=0)). 
+
+The average diagnostics across repeated random sub-sampling CV: 
+
+- PPV: 0.955256	
+- AUC: 0.9304327
+- ACC: 0.9274155	
+- SENS: 0.9669902
+
+  There was a worse performance out of sample, indicating that the in-sample model was overfitting. 
+
+*was unable to do 500 iterations because there was an out of bounds error each time*
+
+```{R}
+#Creating a logistic regression to see if months (school vs. no-school months) are based on the number of longgun or handgun permits administered
+
+#create a binary categorical variable with school months as (1), and no school months as (0)
+data<-df_merged%>%mutate(schoolmonth=ifelse(month==c("06","07","12"),0,1))%>%select(-monthsort)
+
+fit4<-glm(schoolmonth~handgun+long_gun,data=data,family=binomial(link="logit"))
+
+coeftest(fit4)
+exp(coef(fit4))
+
+prob<-predict(fit4,type="response") #get predicted probabilities
+data$prob<-predict(fit4,type="response")
+pred<-ifelse(prob>.5,1,0)
+
+#confusion matrix
+table(prediction=pred, truth=data$schoolmonth)%>%addmargins
+
+#Accuracy 
+(6+97)/108 
+
+#TPR 
+97/99
+
+#TNR 
+6/9
+
+#PPV
+97/99
+
+#ggplot
+data$logit<-predict(fit4,type="link")
+
+data$schoolmonth_factor <- as.factor(data$schoolmonth)
+
+data%>%ggplot(aes(logit,color=schoolmonth_factor,fill=schoolmonth_factor))+geom_density(alpha=.4)+theme(legend.position=c(.85,.85))+geom_vline(xintercept=0)+xlab("logit(log-odds)")+geom_rug(aes(logit,color=schoolmonth_factor))
+
+#ROC
+pred1 <- prediction(data$prob,data$schoolmonth)
+perf <- performance(pred1,"tpr","fpr")
+plot(perf)+geom_path(size=1.5)
+
+#AUC
+auc(data$schoolmonth, prob)
+
+#Class_diag 
+class_diag <- function(probs,truth){
+  #CONFUSION MATRIX: CALCULATE ACCURACY, TPR, TNR, PPV
+tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+acc=sum(diag(tab))/sum(tab)
+sens=tab[2,2]/colSums(tab)[2]
+spec=tab[1,1]/colSums(tab)[1]
+ppv=tab[2,2]/rowSums(tab)[2]
+if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+  #CALCULATE EXACT AUC
+ord<-order(probs, decreasing=TRUE)
+probs <- probs[ord]; truth <- truth[ord]
+TPR=cumsum(truth)/max(1,sum(truth))
+FPR=cumsum(!truth)/max(1,sum(!truth))
+dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+n <- length(TPR)
+auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+data.frame(acc,sens,spec,ppv,auc)
+} 
+
+#repeated random sub-sampling CV 
+set.seed(1234)
+fraction<-0.5 #choose proportion of rows to train
+train_n<-floor(fraction*nrow(data)) #number of rows to train
+iter<-400 #number of iterations
+
+diags<-NULL
+for(i in 1:iter){
+## Create training and test sets
+train_index<-sample(1:nrow(data),size=train_n)
+train<-data[train_index,]
+test<-data[-train_index,]
+truth<-test$schoolmonth
+## Train model on training set (random half of dataset)
+fit5<-glm(schoolmonth~handgun+long_gun,data=train,family="binomial")
+## Test model on remaning half of dataset; get classification diagnostics
+probs<-predict(fit5,newdata = test,type="response")
+diags<-rbind(diags,class_diag(probs,truth))
+}
+
+summarize_all(diags,mean) #average diagnostics 
+
+```
+
+
+##LASSO Regression
+
+For LASSO Regression, I chose the same binary variable used in part 5. The predictors were deaths, number of handgun permits administered, number of long gun permits administered and year. The optimal value for lambda is 0.0829. The variable, number of long gun permits administered, was retained. The 4-fold CV (I was not able to run a 10-fold CV. I kept receiving out of bounds error) using this model (with long gun variable only) resulted in an auc of 0.99 (which indicates near perfect accuracy). There was not much change in auc compared to the part 5 auc of 0.97, indicating that the logistic regression model was probably not overfitting.
+
+```{R}
+y<-as.matrix(data$schoolmonth) #grab response variable
+x<-model.matrix(schoolmonth~Deaths+handgun+long_gun+totals+year,data=data)[,-1] #grab predictors
+#standardize predictor variables 
+x<-scale(x)
+
+#Lasso Regression
+cv<-cv.glmnet(x,y, family="binomial") #find optimal value for lambda 
+lasso1<-glmnet(x,y, family="binomial", lambda=cv$lambda.1se)
+coef(lasso1) #looks like administered long_gun permits is the most predictive variables on whether it is a school month or not. 
+
+
+#Cross-Validating the Lasso Model 
+set.seed(1234)
+k=4
+newdata1 <- data[sample(nrow(data)),]
+
+folds <- cut(seq(1:nrow(data)),breaks=k,labels=F)  #create fold labels
+
+diagss<-NULL
+for(i in 1:k){
+train <- newdata1[folds!=i,] #create training set 
+test <- newdata1[folds==i,] #create test set 
+truth <- test$schoolmonth #save truth labels from fold i
+
+fit6 <- glm(schoolmonth~long_gun,data=train, family="binomial")
+probs2 <- predict(fit6, newdata=test, type="response")
+diagss<-rbind(diagss,class_diag(probs2,truth))
+}
+
+diagss%>%summarize_all(mean)
+
+
+```
+
+
+```{R, echo=F}
+## DO NOT DELETE THIS BLOCK!
+sessionInfo()
+Sys.time()
+Sys.info()
+```
+
