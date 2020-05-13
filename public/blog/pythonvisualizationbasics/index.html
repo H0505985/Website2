@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Annie Huang" />
+    <meta name="description" content="Portfolio of Annie&#39;s Projects">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Useful Python Basics</title>
+    <meta name="generator" content="Hugo 0.70.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/blog/pythonvisualizationbasics/">Useful Python Basics</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          January 1, 0001
+            &nbsp;&nbsp;
+            
+            <span class="label label-success">Python</span>
+            
+            <span class="label label-success">Query</span>
+            
+            <span class="label label-success">Filter</span>
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="getting-started" class="section level1">
+<h1>Getting Started</h1>
+<p>This article will teach you how to Filter and Query your data using Python!</p>
+<p>The first thing you need to do is start up a Jupyter notebook.</p>
+<p>Then, type the following codes:</p>
+<pre class="python"><code>import numpy as np
+import pandas as pd</code></pre>
+</div>
+<div id="import-data" class="section level1">
+<h1>Import Data</h1>
+<p>I’ll be using a csv file of London weather data (courtesy of the Coding Room). It includes maximum and minimum temperatures, the rainfall, and the number of hours of sun for each month.</p>
+<p>First lets load the csv file into a variable - under whatever name you choose.</p>
+<pre class="python"><code>weather = pd.read_csv(&#39;https://coded2.herokuapp.com/datavizpandas/londonweather.csv&#39;)
+weather
+##      Year  Month  Tmax  Tmin  Rain    Sun
+## 0    1957      1   8.7   2.7  39.5   53.0
+## 1    1957      2   9.0   2.9  69.8   64.9
+## 2    1957      3  13.9   5.7  25.4   96.7
+## 3    1957      4  14.2   5.2   5.7  169.6
+## 4    1957      5  16.2   6.5  21.3  195.0
+## ..    ...    ...   ...   ...   ...    ...
+## 743  2018     12  10.7   5.2  60.6   40.3
+## 744  2019      1   7.6   2.0  33.2   56.4
+## 745  2019      2  12.4   3.3  34.2  120.2
+## 746  2019      3  13.1   5.8  49.6  119.0
+## 747  2019      4  15.8   5.7  12.8  170.1
+## 
+## [748 rows x 6 columns]</code></pre>
+</div>
+<div id="filter-and-query" class="section level1">
+<h1>Filter and Query</h1>
+<p>Lets do some filtering and query using python:</p>
+<p>If you’re familiar with R, you know that you use pipes in order to select and filter data.</p>
+<p>In python, we do a chain of method calls:</p>
+<pre class="python"><code>(weather.filter([&#39;Rain&#39;,&#39;Month&#39;]).query(&#39;Month ==&quot;12&quot;&#39;).head(3))
+##     Rain  Month
+## 11  42.1     12
+## 23  85.1     12
+## 35  75.7     12</code></pre>
+<p>Lets break down the code above. I wanted to “select” only columns Month and Rain and only return rows with Months = 12, limiting to three results. Note that the whole chain must be wrapped in parentheses.</p>
+<p>Lets try a different one:</p>
+<p>This time, I want to select Sun and Year and only return rows when the Year is 2019.Note that this time, I did not limit the number of results.</p>
+<pre class="python"><code>(weather.filter([&#39;Sun&#39;,&#39;Year&#39;]).query(&#39;Year ==&quot;2019&quot;&#39;))
+##        Sun  Year
+## 744   56.4  2019
+## 745  120.2  2019
+## 746  119.0  2019
+## 747  170.1  2019</code></pre>
+<p>Lets switch it up a bit:</p>
+<p>This time I want to find the mean and standard deviation of number of hours of Sun and rainfall.</p>
+<pre class="python"><code>(weather.filter([&#39;Sun&#39;,&#39;Rain&#39;]).agg([&#39;mean&#39;,&#39;std&#39;]))
+##              Sun       Rain
+## mean  129.131283  50.408957
+## std    64.710817  29.721493</code></pre>
+<p>I hope this article was useful…Have fun filtering and sorting your data using Python!</p>
+<img src="C:/Users/Annie/Desktop/Website2/static/img/thumbs up.png">
+<pre><code>## R version 4.0.0 (2020-04-24)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 18362)
+## 
+## Matrix products: default
+## 
+## locale:
+## [1] LC_COLLATE=English_United States.1252 
+## [2] LC_CTYPE=English_United States.1252   
+## [3] LC_MONETARY=English_United States.1252
+## [4] LC_NUMERIC=C                          
+## [5] LC_TIME=English_United States.1252    
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] reticulate_1.15
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.4.6    bookdown_0.18   lattice_0.20-41 digest_0.6.25  
+##  [5] rappdirs_0.3.1  grid_4.0.0      jsonlite_1.6.1  magrittr_1.5   
+##  [9] evaluate_0.14   blogdown_0.18   rlang_0.4.6     stringi_1.4.6  
+## [13] Matrix_1.2-18   rmarkdown_2.1   tools_4.0.0     stringr_1.4.0  
+## [17] xfun_0.13       yaml_2.2.1      compiler_4.0.0  htmltools_0.4.0
+## [21] knitr_1.28
+## [1] &quot;2020-05-13 00:37:34 CDT&quot;
+##           sysname           release           version          nodename 
+##         &quot;Windows&quot;          &quot;10 x64&quot;     &quot;build 18362&quot; &quot;DESKTOP-LQIUJCT&quot; 
+##           machine             login              user    effective_user 
+##          &quot;x86-64&quot;           &quot;Annie&quot;           &quot;Annie&quot;           &quot;Annie&quot;</code></pre>
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

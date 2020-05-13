@@ -123,11 +123,27 @@
   </url>
   
   <url>
+    <loc>/tags/filter/</loc>
+  </url>
+  
+  <url>
     <loc>/project1/</loc>
   </url>
   
   <url>
     <loc>/project2/</loc>
+  </url>
+  
+  <url>
+    <loc>/tags/python/</loc>
+  </url>
+  
+  <url>
+    <loc>/tags/query/</loc>
+  </url>
+  
+  <url>
+    <loc>/blog/pythonvisualizationbasics/</loc>
   </url>
   
 </urlset>

@@ -100,5 +100,17 @@ Gun Violence in U.S. results in tens of thousands of deaths and injuries every y
 Gun Violence in U.S. results in tens of thousands of deaths and injuries every year. According to BBC, about 40% of Americans say they own a gun or live in a household with one, and the rate of murder or manslaughter by firearm is the highest in the developed world. In the U.S. especially, gun ownership control and background checks have been heavily argued for in favor of minimizing gun deaths.</description>
     </item>
     
+    <item>
+      <title>Useful Python Basics</title>
+      <link>/blog/pythonvisualizationbasics/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/pythonvisualizationbasics/</guid>
+      <description>Getting StartedThis article will teach you how to Filter and Query your data using Python!
+The first thing you need to do is start up a Jupyter notebook.
+Then, type the following codes:
+import numpy as npimport pandas as pdImport DataI’ll be using a csv file of London weather data (courtesy of the Coding Room). It includes maximum and minimum temperatures, the rainfall, and the number of hours of sun for each month.</description>
+    </item>
+    
   </channel>
 </rss>

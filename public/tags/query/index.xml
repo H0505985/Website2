@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Query on Annie Huang</title>
+    <link>/tags/query/</link>
+    <description>Recent content in Query on Annie Huang</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    
+	<atom:link href="/tags/query/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Useful Python Basics</title>
+      <link>/blog/pythonvisualizationbasics/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/pythonvisualizationbasics/</guid>
+      <description>Getting StartedThis article will teach you how to Filter and Query your data using Python!
+The first thing you need to do is start up a Jupyter notebook.
+Then, type the following codes:
+import numpy as npimport pandas as pdImport DataI’ll be using a csv file of London weather data (courtesy of the Coding Room). It includes maximum and minimum temperatures, the rainfall, and the number of hours of sun for each month.</description>
+    </item>
+    
+  </channel>
+</rss>

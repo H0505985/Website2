@@ -67,5 +67,17 @@ Follow the following steps:
 ▾ &amp;lt;root&amp;gt;/ ▾ static/ ▾ images/ logo.png  Additionally, you&amp;rsquo;ll want any files that should reside at the root (such as CNAME) to be moved to static.</description>
     </item>
     
+    <item>
+      <title>Useful Python Basics</title>
+      <link>/blog/pythonvisualizationbasics/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/pythonvisualizationbasics/</guid>
+      <description>Getting StartedThis article will teach you how to Filter and Query your data using Python!
+The first thing you need to do is start up a Jupyter notebook.
+Then, type the following codes:
+import numpy as npimport pandas as pdImport DataI’ll be using a csv file of London weather data (courtesy of the Coding Room). It includes maximum and minimum temperatures, the rainfall, and the number of hours of sun for each month.</description>
+    </item>
+    
   </channel>
 </rss>

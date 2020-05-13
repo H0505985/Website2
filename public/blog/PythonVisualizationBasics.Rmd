@@ -1,0 +1,85 @@
+---
+title: "Useful Python Basics"
+author: "Annie Huang"
+date: '2020-05-12 T21:13:14-05:00'
+tags:
+- Python
+- Query
+- Filter
+categories: R
+---
+
+```{r setup, include=FALSE, echo=TRUE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(collapse = TRUE)
+library(reticulate)
+```
+
+
+# Getting Started 
+
+This article will teach you how to Filter and Query your data using Python!
+
+The first thing you need to do is start up a Jupyter notebook.
+
+Then, type the following codes: 
+
+```{python}
+import numpy as np
+import pandas as pd
+```
+
+# Import Data
+
+I'll be using a csv file of London weather data (courtesy of the Coding Room). It includes maximum and minimum temperatures, the rainfall, and the number of hours of sun for each month. 
+
+First lets load the csv file into a variable - under whatever name you choose. 
+
+```{python}
+weather = pd.read_csv('https://coded2.herokuapp.com/datavizpandas/londonweather.csv')
+weather
+```
+
+
+# Filter and Query 
+
+Lets do some filtering and query using python: 
+
+If you're familiar with R, you know that you use pipes in order to select and filter data. 
+
+In python, we do a chain of method calls: 
+
+
+```{python}
+(weather.filter(['Rain','Month']).query('Month =="12"').head(3))
+```
+
+Lets break down the code above. I wanted to "select" only columns Month and Rain and only return rows with Months = 12, limiting to three results. Note that the whole chain must be wrapped in parentheses. 
+
+
+Lets try a different one: 
+
+This time, I want to select Sun and Year and only return rows when the Year is 2019.Note that this time, I did not limit the number of results. 
+
+```{python}
+(weather.filter(['Sun','Year']).query('Year =="2019"'))
+```
+
+Lets switch it up a bit:
+
+This time I want to find the mean and standard deviation of number of hours of Sun and rainfall. 
+
+```{python}
+(weather.filter(['Sun','Rain']).agg(['mean','std']))
+
+```
+
+
+I hope this article was useful...Have fun filtering and sorting your data using Python! 
+
+```{R, echo=F}
+## DO NOT DELETE THIS BLOCK!
+sessionInfo()
+Sys.time()
+Sys.info()
+```
